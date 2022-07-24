@@ -1,0 +1,16 @@
+{
+  "authors": [
+    "Cristi Constantin <cristi.constantin@live.com>"
+  ],
+  "dependencies": {
+    "playwright": "1.24.0"
+  },
+  "name": "web-snap",
+  "description": "Create perfect snapshots of web pages",
+  "license": "MIT",
+  "version": "0.1",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/croqaz/web-snap.git"
+  }
+}
