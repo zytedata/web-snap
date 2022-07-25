@@ -25,6 +25,8 @@ const options = {
         // headers: 'content-type, date', // Content-Type header is pretty important
         headers: 'content-type, date, content-language, last-modified, expires', // extended version
         // userAgent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36
+        removeElems: '', // remove page elements
+        addCSS: '', // add extra CSS
     },
 };
 
@@ -47,6 +49,8 @@ const options = {
     const URL = args._[0] || args.input;
     const OUT = args._[1] || args.output;
     const HEADERS = smartSplit(args.headers);
+    const REMOVE = smartSplit(args.removeElems);
+    const CSS = args.addCSS;
 
     const restrictHeaders = function (resp) {
         const headers = resp.headers();
@@ -105,6 +109,25 @@ const options = {
         await page.goto(URL, { timeout: args.timeout, waitUntil: 'networkidle' });
     } catch (err) {
         console.error('Wait timeout:', err);
+    }
+
+    for (const selector of REMOVE) {
+        console.log('Removing element selector:', selector);
+        await page.evaluate((s) => {
+            for (const el of document.querySelectorAll(s)) {
+                el.parentNode.removeChild(el);
+            }
+        }, selector);
+    }
+
+    if (CSS && CSS.trim()) {
+        console.log('Adding custom CSS...');
+        await page.evaluate((css) => {
+            const cssHack = document.createElement('style');
+            cssHack.className = 'hack';
+            cssHack.innerText = css;
+            document.head.appendChild(cssHack);
+        }, CSS);
     }
 
     // initial snapshot
