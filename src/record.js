@@ -3,18 +3,8 @@
  */
 import fs from 'fs';
 import mri from 'mri';
-import { chromium } from 'playwright';
-import { delay, requestKey, normalizeURL } from './util.js';
-
-function restrictHeaders(resp) {
-    const headers = resp.headers();
-    return Object.fromEntries(Object.entries(headers).filter(([key]) => key === 'content-type' || key === 'date'));
-}
-
-async function saveSnap(out, snapshot) {
-    await fs.promises.writeFile(out, JSON.stringify(snapshot, null, 2), { encoding: 'utf8' });
-    console.log(`Snapshot file: "${out}" was saved`);
-}
+import playwright from 'playwright';
+import { delay, requestKey, normalizeURL, checkBrowser, smartSplit } from './util.js';
 
 const options = {
     boolean: ['help', 'version', 'jsEnabled'],
@@ -25,12 +15,14 @@ const options = {
         // c: 'config',
     },
     default: {
+        browser: 'chromium',
         wait: 5 * 1000,
         headless: false,
         output: 'snapshot.json',
         timeout: 15 * 1000,
         imgTimeout: 15 * 1000,
-        // headers
+        jsEnabled: false,
+        headers: 'content-type, date', // Content-Type header is pretty important
     },
 };
 
@@ -43,17 +35,32 @@ const options = {
         return;
     }
 
+    if (!checkBrowser(args.browser)) {
+        console.error(`Invalid browser name "${args.browser}"! Cannot launch!`);
+    }
+
     const URL = args._[0] || args.input;
     const OUT = args._[1] || args.output;
+    const HEADERS = smartSplit(args.headers);
+
+    const restrictHeaders = function (resp) {
+        const headers = resp.headers();
+        return Object.fromEntries(Object.entries(headers).filter(([key]) => HEADERS.includes(key)));
+    };
 
     const snapshot = { url: URL, html: '', responses: {} };
 
-    const browser = await chromium.launch({ headless: args.headless });
-    const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: null });
+    const browser = await playwright[args.browser].launch({ headless: args.headless });
+    const context = await browser.newContext({
+        ignoreHTTPSErrors: true,
+        viewport: null,
+        javaScriptEnabled: args.jsEnabled,
+    });
     const page = await context.newPage();
 
     page.on('close', async () => {
-        await saveSnap(OUT, snapshot);
+        await fs.promises.writeFile(OUT, JSON.stringify(snapshot, null, 2), { encoding: 'utf8' });
+        console.log(`Snapshot file: "${OUT}" was saved`);
         process.exit();
     });
 
@@ -94,7 +101,7 @@ const options = {
         console.error('Wait timeout:', err);
     }
 
-    // initial snapshow
+    // initial snapshot
     snapshot.html = (await page.content()).trim();
 
     try {
@@ -104,12 +111,12 @@ const options = {
         console.error('Images timeout:', err);
     }
 
-    // second snapshow
+    // second snapshot
     snapshot.html = (await page.content()).trim();
 
     await delay(args.wait);
 
-    // final snapshow
+    // final snapshot
     snapshot.html = (await page.content()).trim();
 
     await browser.close();

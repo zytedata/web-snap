@@ -15,3 +15,17 @@ export function normalizeURL(url) {
     u.hash = '';
     return u.toString();
 }
+
+export function checkBrowser(str) {
+    return ['chromium', 'firefox', 'webkit'].includes(str);
+}
+
+export function smartSplit(str) {
+    const split = [];
+    for (let s of str.split(/[,; ]+/)) {
+        if (s.trim()) {
+            split.push(s.toLowerCase());
+        }
+    }
+    return split;
+}
