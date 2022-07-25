@@ -3,8 +3,11 @@
     "Cristi Constantin <cristi.constantin@live.com>"
   ],
   "dependencies": {
+    "mri": "1.2.0",
     "playwright": "1.24.0"
   },
+  "main": "src",
+  "type": "module",
   "name": "web-snap",
   "description": "Create perfect snapshots of web pages",
   "license": "MIT",
