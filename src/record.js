@@ -21,8 +21,10 @@ const options = {
         output: 'snapshot.json',
         timeout: 15 * 1000,
         imgTimeout: 15 * 1000,
-        jsEnabled: false,
-        headers: 'content-type, date', // Content-Type header is pretty important
+        jsEnabled: false, // disable JS execution and capturing
+        // headers: 'content-type, date', // Content-Type header is pretty important
+        headers: 'content-type, date, content-language, last-modified, expires', // extended version
+        // userAgent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36
     },
 };
 
@@ -38,6 +40,9 @@ const options = {
     if (!checkBrowser(args.browser)) {
         console.error(`Invalid browser name "${args.browser}"! Cannot launch!`);
     }
+    if (args.jsEnabled === 'off') {
+        args.jsEnabled = false;
+    }
 
     const URL = args._[0] || args.input;
     const OUT = args._[1] || args.output;
@@ -52,9 +57,10 @@ const options = {
 
     const browser = await playwright[args.browser].launch({ headless: args.headless });
     const context = await browser.newContext({
+        javaScriptEnabled: args.jsEnabled,
+        userAgent: args.userAgent,
         ignoreHTTPSErrors: true,
         viewport: null,
-        javaScriptEnabled: args.jsEnabled,
     });
     const page = await context.newPage();
 

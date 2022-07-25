@@ -89,8 +89,8 @@ const options = {
         const key = requestKey(r);
         const cached = record.responses[key];
         if (cached && cached.body) {
-            // drop all javascript requests on restore???
-            if (cached.headers['content-type'] === 'application/javascript') {
+            // ignore all javascript requests on restore, when JS disabled
+            if (!args.jsEnabled && cached.headers['content-type'] === 'application/javascript') {
                 // HTTP 204 = NO CONTENT
                 route.fulfill({ status: 204 });
                 return;
@@ -99,6 +99,7 @@ const options = {
             route.fulfill({
                 contentType: cached.headers['content-type'] || '',
                 body: Buffer.from(cached.body, 'base64'),
+                // headers: cached.headers, // Headers are probably useless here
             });
             return;
         }
