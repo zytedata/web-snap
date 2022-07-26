@@ -23,7 +23,6 @@ const options = {
         browser: 'chromium',
         wait: 5 * 1000,
         headless: false,
-        output: 'snapshot.json',
         minify: true,
         timeout: 15 * 1000,
         imgTimeout: 15 * 1000,
@@ -31,6 +30,7 @@ const options = {
         // headers: 'content-type, date', // Content-Type header is pretty important
         headers: 'content-type, date, content-language, last-modified, expires', // extended version
         // userAgent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36
+        dropRequests: '', // drop matching requests
         removeElems: '', // remove page elements
         addCSS: '', // add extra CSS
     },
@@ -52,14 +52,19 @@ const options = {
         args.jsEnabled = false;
     }
 
-    const URL = args._[0] || args.input;
+    const URI = args._[0] || args.input;
+    const HOST = new URL(URI).host;
     const HEADERS = smartSplit(args.headers);
     const REMOVE = smartSplit(args.removeElems);
     const CSS = args.addCSS;
 
     let OUT = args._[1] || args.output;
-    if (args.gzip && !OUT.endsWith('.gz')) {
-        OUT += '.gz';
+    if (!OUT) OUT = `snapshot_${HOST}.json`;
+    if (args.gzip && !OUT.endsWith('.gz')) OUT += '.gz';
+
+    const DROP = [];
+    for (const re of smartSplit(args.dropRequests)) {
+        DROP.push(new RegExp(re, 'i'));
     }
 
     const restrictHeaders = function (resp) {
@@ -67,7 +72,7 @@ const options = {
         return Object.fromEntries(Object.entries(headers).filter(([key]) => HEADERS.includes(key)));
     };
 
-    const snapshot = { url: URL, html: '', responses: {} };
+    const snapshot = { url: URI, html: '', responses: {} };
 
     // XXX -- persistent context seems broken
     // const context = await playwright.firefox.launchPersistentContext('~/.mozilla/firefox/..', {headless: args.headless});
@@ -105,7 +110,7 @@ const options = {
         if (u.startsWith('data:')) {
             return;
         }
-        if (u === normalizeURL(URL)) return;
+        if (u === normalizeURL(URI)) return;
         const status = response.status();
         if (status >= 300 && status <= 399) {
             console.log('Redirect from:', u, 'to:', response.headers()['location']);
@@ -114,6 +119,12 @@ const options = {
         if (status >= 500) {
             console.error('Remote server error', status, u);
             return;
+        }
+        for (const re of DROP) {
+            if (re.test(u)) {
+                console.log('Drop matching request:', re, u);
+                return;
+            }
         }
         console.log('Request:', requestKey(r), response.status());
         const headers = restrictHeaders(response);
@@ -135,7 +146,7 @@ const options = {
 
     try {
         console.log('Waiting for the page to load...');
-        await page.goto(URL, { timeout: args.timeout, waitUntil: 'networkidle' });
+        await page.goto(URI, { timeout: args.timeout, waitUntil: 'networkidle' });
     } catch (err) {
         console.error('Wait timeout:', err);
     }

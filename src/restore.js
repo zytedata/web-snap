@@ -110,9 +110,7 @@ const options = {
         route.continue(); // or abort ??
     });
 
-    await page.goto(record.url, { timeout: 15 * 1000, waitUntil: 'networkidle' });
-
+    await page.goto(record.url, { waitUntil: 'networkidle' });
     await delay(args.wait);
-
     await browser.close();
 })();
