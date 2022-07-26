@@ -3,15 +3,20 @@
  */
 import fs from 'fs';
 import mri from 'mri';
+import { gzip } from 'zlib';
+import { promisify } from 'util';
 import playwright from 'playwright';
+import { minify } from 'html-minifier-terser';
+
 import { delay, requestKey, normalizeURL, checkBrowser, smartSplit } from './util.js';
 
 const options = {
-    boolean: ['help', 'version', 'jsEnabled'],
+    boolean: ['help', 'version', 'gzip', 'jsEnabled'],
     alias: {
         i: 'input',
         o: 'output',
         v: 'version',
+        z: 'gzip',
         // c: 'config',
     },
     default: {
@@ -19,6 +24,7 @@ const options = {
         wait: 5 * 1000,
         headless: false,
         output: 'snapshot.json',
+        minify: true,
         timeout: 15 * 1000,
         imgTimeout: 15 * 1000,
         jsEnabled: false, // disable JS execution and capturing
@@ -47,10 +53,14 @@ const options = {
     }
 
     const URL = args._[0] || args.input;
-    const OUT = args._[1] || args.output;
     const HEADERS = smartSplit(args.headers);
     const REMOVE = smartSplit(args.removeElems);
     const CSS = args.addCSS;
+
+    let OUT = args._[1] || args.output;
+    if (args.gzip && !OUT.endsWith('.gz')) {
+        OUT += '.gz';
+    }
 
     const restrictHeaders = function (resp) {
         const headers = resp.headers();
@@ -58,6 +68,9 @@ const options = {
     };
 
     const snapshot = { url: URL, html: '', responses: {} };
+
+    // XXX -- persistent context seems broken
+    // const context = await playwright.firefox.launchPersistentContext('~/.mozilla/firefox/..', {headless: args.headless});
 
     const browser = await playwright[args.browser].launch({ headless: args.headless });
     const context = await browser.newContext({
@@ -69,7 +82,19 @@ const options = {
     const page = await context.newPage();
 
     page.on('close', async () => {
-        await fs.promises.writeFile(OUT, JSON.stringify(snapshot, null, 2), { encoding: 'utf8' });
+        if (args.minify) {
+            snapshot.html = await minify(snapshot.html, {
+                removeAttributeQuotes: true,
+                sortAttributes: true,
+                sortClassName: true,
+            });
+        }
+        if (args.gzip) {
+            const record = await promisify(gzip)(JSON.stringify(snapshot));
+            await fs.promises.writeFile(OUT, record, { encoding: 'utf8' });
+        } else {
+            await fs.promises.writeFile(OUT, JSON.stringify(snapshot, null, 2), { encoding: 'utf8' });
+        }
         console.log(`Snapshot file: "${OUT}" was saved`);
         process.exit();
     });
@@ -84,6 +109,10 @@ const options = {
         const status = response.status();
         if (status >= 300 && status <= 399) {
             console.log('Redirect from:', u, 'to:', response.headers()['location']);
+            return;
+        }
+        if (status >= 500) {
+            console.error('Remote server error', status, u);
             return;
         }
         console.log('Request:', requestKey(r), response.status());

@@ -53,6 +53,7 @@ const options = {
     });
     browser.on('disconnected', process.exit);
     const context = await browser.newContext({
+        acceptInsecureCerts: true,
         ignoreHTTPSErrors: true,
         javaScriptEnabled: args.jsEnabled,
         offline: args.offline,
@@ -90,7 +91,8 @@ const options = {
         const cached = record.responses[key];
         if (cached && cached.body) {
             // ignore all javascript requests on restore, when JS disabled
-            if (!args.jsEnabled && cached.headers['content-type'] === 'application/javascript') {
+            const contentType = cached.headers['content-type'];
+            if (!args.jsEnabled && (contentType === 'text/javascript' || contentType === 'application/javascript')) {
                 // HTTP 204 = NO CONTENT
                 route.fulfill({ status: 204 });
                 return;
