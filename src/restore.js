@@ -11,19 +11,24 @@ import { delay, requestKey, normalizeURL } from './util.js';
 import pkg from '../package.json' assert { type: 'json' };
 
 const options = {
-    boolean: ['help', 'version', 'jsEnabled'],
+    boolean: ['help', 'version', 'js'],
     alias: {
         i: 'input',
         v: 'version',
-        js: 'jsEnabled',
         // c: 'config',
     },
     default: {
-        wait: 120 * 1000,
-        jsEnabled: false,
+        js: false, // disable JS execution and capturing
         offline: true,
+        wait: 120 * 1000,
     },
 };
+
+function describe(jsHandle) {
+    return jsHandle.evaluate((obj) => {
+        return typeof obj === 'string' ? obj : `${typeof obj}=${obj}`;
+    }, jsHandle);
+}
 
 (async function main() {
     const args = mri(process.argv.slice(2), options);
@@ -55,7 +60,7 @@ const options = {
     const context = await browser.newContext({
         acceptInsecureCerts: true,
         ignoreHTTPSErrors: true,
-        javaScriptEnabled: args.jsEnabled,
+        javaScriptEnabled: args.js,
         offline: args.offline,
         viewport: null,
     });
@@ -92,7 +97,7 @@ const options = {
         if (cached && cached.body) {
             // ignore all javascript requests on restore, when JS disabled
             const contentType = cached.headers['content-type'];
-            if (!args.jsEnabled && (contentType === 'text/javascript' || contentType === 'application/javascript')) {
+            if (!args.js && (contentType === 'text/javascript' || contentType === 'application/javascript')) {
                 // HTTP 204 = NO CONTENT
                 route.fulfill({ status: 204 });
                 return;

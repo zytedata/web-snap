@@ -11,22 +11,24 @@ import { minify } from 'html-minifier-terser';
 import { delay, requestKey, normalizeURL, checkBrowser, smartSplit } from './util.js';
 
 const options = {
-    boolean: ['help', 'version', 'gzip', 'jsEnabled'],
+    boolean: ['help', 'version', 'js', 'gzip'],
     alias: {
         i: 'input',
         o: 'output',
         v: 'version',
         z: 'gzip',
-        // c: 'config',
+        css: 'addCSS',
+        rm: 'removeElems',
+        drop: 'dropRequests',
     },
     default: {
         browser: 'chromium',
-        wait: 5 * 1000,
         headless: false,
-        minify: true,
-        timeout: 15 * 1000,
         imgTimeout: 15 * 1000,
-        jsEnabled: false, // disable JS execution and capturing
+        js: true, // disable JS execution and capturing
+        minify: false, // min final HTML before save
+        timeout: 15 * 1000, // navigation timeout
+        wait: 5 * 1000,
         // headers: 'content-type, date', // Content-Type header is pretty important
         headers: 'content-type, date, content-language, last-modified, expires', // extended version
         // userAgent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36
@@ -48,16 +50,14 @@ const options = {
     if (!checkBrowser(args.browser)) {
         console.error(`Invalid browser name "${args.browser}"! Cannot launch!`);
     }
-    if (args.jsEnabled === 'off') {
-        args.jsEnabled = false;
-    }
 
     const URI = args._[0] || args.input;
-    const HOST = new URL(URI).host;
     const HEADERS = smartSplit(args.headers);
     const REMOVE = smartSplit(args.removeElems);
     const CSS = args.addCSS;
 
+    let HOST = new URL(URI).host;
+    if (HOST.startsWith('www.')) HOST = HOST.slice(4);
     let OUT = args._[1] || args.output;
     if (!OUT) OUT = `snapshot_${HOST}.json`;
     if (args.gzip && !OUT.endsWith('.gz')) OUT += '.gz';
@@ -79,7 +79,7 @@ const options = {
 
     const browser = await playwright[args.browser].launch({ headless: args.headless });
     const context = await browser.newContext({
-        javaScriptEnabled: args.jsEnabled,
+        javaScriptEnabled: args.js,
         userAgent: args.userAgent,
         ignoreHTTPSErrors: true,
         viewport: null,
@@ -151,6 +151,16 @@ const options = {
         console.error('Wait timeout:', err);
     }
 
+    // initial snapshot
+    snapshot.html = (await page.content()).trim();
+
+    try {
+        console.log('Waiting for images to load...');
+        await page.waitForSelector('img', { timeout: args.imgTimeout });
+    } catch (err) {
+        console.error('Images timeout:', err);
+    }
+
     for (const selector of REMOVE) {
         console.log('Removing element selector:', selector);
         await page.evaluate((s) => {
@@ -168,16 +178,6 @@ const options = {
             cssHack.innerText = css;
             document.head.appendChild(cssHack);
         }, CSS);
-    }
-
-    // initial snapshot
-    snapshot.html = (await page.content()).trim();
-
-    try {
-        console.log('Waiting for images to load...');
-        await page.waitForSelector('img', { timeout: args.imgTimeout });
-    } catch (err) {
-        console.error('Images timeout:', err);
     }
 
     // second snapshot
