@@ -31,8 +31,62 @@ $ web-record https://www.amazon.com/dp/B07978J597/
 $ web-restore snapshot_amazon.com.json
 ```
 
-Note that some pages should be scrolled a little bit, to make sure all the page and images are loaded before the snapshot is taken.
-This is not a limitation of web-snap, it's how modern browsers and pages are intentionally built to load resources lazily.
+Note that some pages should be scrolled a little bit and hover some elements, to make sure all the page and images are loaded before the snapshot is taken.
+This is not a limitation of web-snap, it's how modern browsers and pages are intentionally built to load resources lazily, on demand.
+
+For a complete example, with all the flags:
+
+``` shell
+$ web-record https://en.wikipedia.org/wiki/Online_and_offline --gzip --rm 'script, #mw-navigation, #mw-page-base, #mw-head-base, #footer-icons' --css '#content{margin-left:0 !important}' --drop '.png$, .css$' --wait 10000 --js off --minify --purgeCSS
+```
+
+![Restored Wikipedia page](img/wikipedia-offline.png)
+
+This will store the page just like before, but it will do a lot of pre-processing, to reduce the snapshot size from *1.3MB*, to only *27K* (48x smaller), without losing any useful information.
+
+The `--gzip` flag will archive the JSON using GZIP. It is totally safe to use.<br>
+The `--rm` flag, or `--removeElems`, will remove the specified page elements, using selectors. This can be used to remove useless elements so you can focus on the important content and reduce the snapshot size.<br>
+The `--css` flag, or `--addCSS`, will add custom CSS on the page, before creating the snapshot. This can be used to change the font size, or move some elements to make the page look nicer.<br>
+The `--drop`, or `--dropRequests` flag, will drop all HTTP requests matching, with regex. This can be used to stop tracking requests and reduce the final snapshot size.<br>
+The `--wait` flag represents how much the browser page will stay open (in miliseconds) to give you time to interact with the page, eg: accept cookies, close popups, scroll a little, hover some images.<br>
+The `--js` flag will stop the browser from executing Javascript and will drop all Javascript requests, which usually reduces the snapshot size by A LOT. NOTE that this option will completely break many pages.<br>
+The `--minify` flag will try to compress the final HTML as much as possible, to reduce the snapshot size. NOTE that this can crash for some pages with lots of Javascript.<br>
+The `--purgeCSS` flag will purge all unused CSS and replace all styles with this processed CSS. This can reduce the snapshot size by A LOT, but will completely break some pages.
+
+And a last example, how to capture an Amazon page:
+
+``` shell
+web-record https://www.amazon.com/dp/B086CV781H --gzip --rm 'script #nav-main #mars-fs-wrapper #rhf #navFooter #navBackToTop' --drop '//fls-na.amazon.com/1 //unagi.amazon.com/1 //unagi-na.amazon.com/1 //cloudfront-labs.amazonaws.com/' --js off --minify --wait 10000
+```
+
+![Restored Amazon page](img/amazon-kindle.png)
+
+These options will reduce the Amazon snapshot from ~*21MB*, to *857K* (24x smaller), without losing any useful information.
+
+If you care about the snapshot size, you need to try different options depending on the domain, to see what works.
+
+
+## File format
+
+The snapshot.json file format is super simple:
+
+- url - is the URL specified when creating the snapshot
+- html - is the final, settled HTML of the page
+- responses - contains all the resources of the page (CSS, JS, images, etc) as key-value pairs:
+    - body - the resource body saved as Base64
+    - headers - a limited subset of the response headers
+    - request_url - the initial resource URL
+    - response_url - the final response URL, after redirects
+    - status - a number representing the HTTP status
+
+The format is subject to change, mostly to simplify it.
+
+
+## Limitations
+
+This format doesn't usually capture the audio and the video from the page.<br>
+What it means is you can't capture Youtube, Vimeo, or Spotify pages. (YET? or never?)<br>
+This limitation may change in the future, but it's not the primary goal of the project.
 
 
 ## Similar

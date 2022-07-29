@@ -33,7 +33,7 @@ export function smartSplit(str) {
     const split = [];
     for (let s of str.split(/[,; ]+/)) {
         if (s.trim()) {
-            split.push(s.toLowerCase());
+            split.push(s);
         }
     }
     return split;

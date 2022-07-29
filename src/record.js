@@ -51,7 +51,7 @@ function processArgs(args) {
     args.purgeCSS = toBool(args.purgeCSS);
 
     args.CSS = args.addCSS ? args.addCSS.trim() : '';
-    args.HEADERS = smartSplit(args.headers);
+    args.HEADERS = smartSplit(args.headers).map(x => x.toLowerCase());
     args.REMOVE = smartSplit(args.removeElems);
     console.log(args);
 }
