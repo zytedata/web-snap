@@ -18,5 +18,9 @@
   "repository": {
     "type": "git",
     "url": "git://github.com/croqaz/web-snap.git"
+  },
+  "bin": {
+    "web-record": "src/record.js",
+    "web-restore": "src/restore.js"
   }
 }
