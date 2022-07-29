@@ -11,14 +11,14 @@ import { delay, requestKey, normalizeURL } from './util.js';
 import pkg from '../package.json' assert { type: 'json' };
 
 const options = {
-    boolean: ['help', 'version', 'js'],
+    boolean: ['help', 'version', 'js', 'offline'],
     alias: {
         i: 'input',
         v: 'version',
         // c: 'config',
     },
     default: {
-        js: false, // disable JS execution and capturing
+        js: true, // disable JS execution and capturing
         offline: true,
         wait: 120 * 1000,
     },
@@ -106,6 +106,7 @@ function describe(jsHandle) {
             route.fulfill({
                 contentType: cached.headers['content-type'] || '',
                 body: Buffer.from(cached.body, 'base64'),
+                status: record.status,
                 // headers: cached.headers, // Headers are probably useless here
             });
             return;

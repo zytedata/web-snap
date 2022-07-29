@@ -6,12 +6,14 @@ import mri from 'mri';
 import { gzip } from 'zlib';
 import { promisify } from 'util';
 import playwright from 'playwright';
+import CleanCSS from 'clean-css';
+import { PurgeCSS } from 'purgecss';
 import { minify } from 'html-minifier-terser';
 
-import { delay, requestKey, normalizeURL, checkBrowser, smartSplit } from './util.js';
+import { delay, requestKey, normalizeURL, checkBrowser, toBool, smartSplit } from './util.js';
 
 const options = {
-    boolean: ['help', 'version', 'js', 'gzip'],
+    boolean: ['help', 'version'],
     alias: {
         i: 'input',
         o: 'output',
@@ -23,10 +25,12 @@ const options = {
     },
     default: {
         browser: 'chromium',
-        headless: false,
+        gzip: null, // compress final JSON
+        headless: null, // visible browser window
         imgTimeout: 15 * 1000,
-        js: true, // disable JS execution and capturing
-        minify: false, // min final HTML before save
+        js: 'on', // disable JS execution and capturing
+        minify: null, // min final HTML before save
+        purgeCSS: null, // purge unused CSS and generate 1 single CSS file
         timeout: 15 * 1000, // navigation timeout
         wait: 5 * 1000,
         // headers: 'content-type, date', // Content-Type header is pretty important
@@ -38,9 +42,21 @@ const options = {
     },
 };
 
-(async function main() {
+function processArgs(args) {
+    args.gzip = toBool(args.gzip);
+    args.js = toBool(args.js);
+    args.headless = toBool(args.headless);
+    args.minify = toBool(args.minify);
+    args.purgeCSS = toBool(args.purgeCSS);
+
+    args.CSS = args.addCSS ? args.addCSS.trim() : '';
+    args.HEADERS = smartSplit(args.headers);
+    args.REMOVE = smartSplit(args.removeElems);
+    console.log(args);
+}
+
+;(async function main() {
     const args = mri(process.argv.slice(2), options);
-    // console.log(args);
 
     if (args.version) {
         console.log('Web-Snap v' + pkg.version);
@@ -51,10 +67,9 @@ const options = {
         console.error(`Invalid browser name "${args.browser}"! Cannot launch!`);
     }
 
+    processArgs(args);
+    const { CSS, HEADERS, REMOVE } = args;
     const URI = args._[0] || args.input;
-    const HEADERS = smartSplit(args.headers);
-    const REMOVE = smartSplit(args.removeElems);
-    const CSS = args.addCSS;
 
     let HOST = new URL(URI).host;
     if (HOST.startsWith('www.')) HOST = HOST.slice(4);
@@ -88,11 +103,15 @@ const options = {
 
     page.on('close', async () => {
         if (args.minify) {
-            snapshot.html = await minify(snapshot.html, {
-                removeAttributeQuotes: true,
-                sortAttributes: true,
-                sortClassName: true,
-            });
+            try {
+                snapshot.html = await minify(snapshot.html, {
+                    removeAttributeQuotes: true,
+                    sortAttributes: true,
+                    sortClassName: true,
+                });
+            } catch (err) {
+                console.error('Cannot minify!', err);
+            }
         }
         if (args.gzip) {
             const record = await promisify(gzip)(JSON.stringify(snapshot));
@@ -102,6 +121,19 @@ const options = {
         }
         console.log(`Snapshot file: "${OUT}" was saved`);
         process.exit();
+    });
+
+    page.route('**', async (route) => {
+        const r = route.request();
+        const u = normalizeURL(r.url());
+        for (const re of DROP) {
+            if (re.test(u)) {
+                console.log('Drop matching request:', re, u);
+                route.abort();
+                return;
+            }
+        }
+        route.continue();
     });
 
     page.on('response', async (response) => {
@@ -119,12 +151,6 @@ const options = {
         if (status >= 500) {
             console.error('Remote server error', status, u);
             return;
-        }
-        for (const re of DROP) {
-            if (re.test(u)) {
-                console.log('Drop matching request:', re, u);
-                return;
-            }
         }
         console.log('Request:', requestKey(r), response.status());
         const headers = restrictHeaders(response);
@@ -170,7 +196,7 @@ const options = {
         }, selector);
     }
 
-    if (CSS && CSS.trim()) {
+    if (CSS) {
         console.log('Adding custom CSS...');
         await page.evaluate((css) => {
             const cssHack = document.createElement('style');
@@ -182,6 +208,52 @@ const options = {
 
     // second snapshot
     snapshot.html = (await page.content()).trim();
+
+    if (args.purgeCSS) {
+        console.log('Purging unused CSS...');
+        const pageCSS = await page.evaluate(() => {
+            const css = [];
+            for (const style of document.styleSheets) {
+                let raw;
+                try {
+                    raw = Array.from(style.cssRules).map((r) => r.cssText).join(' ');
+                } catch (err) {
+                    console.error('Cannot access CSS:', err);
+                }
+                if (raw) css.push({ raw });
+            }
+            return css;
+        });
+        const purgedCSS = await new PurgeCSS().purge({
+            css: pageCSS,
+            content: [{ raw: snapshot.html, extension: 'html' }],
+        });
+        const joinedCSS = purgedCSS.map(({ css }) => css.trim()).join('\n');
+        const finalCSS = new CleanCSS({ mergeAdjacentRules: true }).minify(joinedCSS);
+        console.log(finalCSS.stats);
+
+        console.log('Replacing existing CSS...');
+        await page.evaluate(() => {
+            for (const c of document.querySelectorAll('style')) {
+                c.parentNode.removeChild(c);
+            }
+        });
+        await page.evaluate((css) => {
+            const cssHack = document.createElement('style');
+            cssHack.className = 'purge';
+            cssHack.innerText = css;
+            document.head.appendChild(cssHack);
+        }, finalCSS.styles);
+        snapshot.html = await page.content();
+        for (const k of Object.keys(snapshot.responses)) {
+            const res = snapshot.responses[k];
+            if (res.headers['content-type'] && res.headers['content-type'].startsWith('text/css')) {
+                console.log('Purging CSS response:', k);
+                res.body = null;
+                delete snapshot.responses[k];
+            }
+        }
+    }
 
     await delay(args.wait);
 

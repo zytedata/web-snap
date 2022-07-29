@@ -20,7 +20,16 @@ export function checkBrowser(str) {
     return ['chromium', 'firefox', 'webkit'].includes(str);
 }
 
+export function toBool(str) {
+    if (!str) return false;
+    if (typeof str !== 'string') return str;
+    str = str.toLowerCase();
+    if (str === 'false' || str === 'off' || str === 'no' || str === '0') return false;
+    return true;
+}
+
 export function smartSplit(str) {
+    if (typeof str !== 'string') return str;
     const split = [];
     for (let s of str.split(/[,; ]+/)) {
         if (s.trim()) {

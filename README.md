@@ -9,4 +9,7 @@ Create perfect snapshots of web pages.
 - https://github.com/danburzo/percollate
 - https://github.com/croqaz/clean-mark
 
-Also check: https://crlf.link/mem/web-archiving
+Also check:
+
+- https://crlf.link/mem/offline
+- https://crlf.link/mem/web-archiving
