@@ -53,7 +53,7 @@ function processArgs(args) {
     args.CSS = args.addCSS ? args.addCSS.trim() : '';
     args.HEADERS = smartSplit(args.headers).map(x => x.toLowerCase());
     args.REMOVE = smartSplit(args.removeElems);
-    console.log(args);
+    // console.log(args);
 }
 
 ;(async function main() {
@@ -143,8 +143,10 @@ function processArgs(args) {
         if (u.startsWith('data:')) {
             return;
         }
+        // ignore the index page, it will be saved at the end
         if (u === normalizeURL(URI)) return;
         const status = response.status();
+        // ignore redirect requests, they will be saved after resolved
         if (status >= 300 && status <= 399) {
             console.log('Redirect from:', u, 'to:', response.headers()['location']);
             return;
@@ -180,6 +182,8 @@ function processArgs(args) {
 
     // initial snapshot
     snapshot.html = (await page.content()).trim();
+    // resolved base URL
+    snapshot.base_url = await page.evaluate('document.baseURI');
 
     try {
         console.log('Waiting for images to load...');

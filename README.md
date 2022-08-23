@@ -88,6 +88,9 @@ This format doesn't usually capture the audio and the video from the page.<br>
 What it means is you can't capture Youtube, Vimeo, or Spotify pages. (YET? or never?)<br>
 This limitation may change in the future, but it's not the primary goal of the project.
 
+Read my article that compares WARC, rrWeb and recorded:
+https://crlf.link/log/entries/220803-web-snap/
+
 
 ## Similar
 
@@ -95,6 +98,7 @@ This limitation may change in the future, but it's not the primary goal of the p
 - https://github.com/go-shiori/obelisk
 - https://github.com/danburzo/percollate
 - https://github.com/croqaz/clean-mark
+- https://github.com/sindresorhus/capture-website
 
 Also check:
 
