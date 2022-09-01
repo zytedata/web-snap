@@ -37,7 +37,10 @@ This is not a limitation of web-snap, it's how modern browsers and pages are int
 For a complete example, with all the flags:
 
 ``` shell
-$ web-record https://en.wikipedia.org/wiki/Online_and_offline --gzip --rm 'script, #mw-navigation, #mw-page-base, #mw-head-base, #footer-icons' --css '#content{margin-left:0 !important}' --drop '.png$, .css$' --wait 10000 --js off --minify --purgeCSS
+$ web-record https://en.wikipedia.org/wiki/Online_and_offline --gzip \
+    --rm 'script, #mw-navigation, #mw-page-base, #mw-head-base, #footer-icons' \
+    --css '#content{margin-left:0 !important}' --drop '.png$, .css$' --wait 10 \
+    --js off --minify --purgeCSS
 ```
 
 ![Restored Wikipedia page](img/wikipedia-offline.png)
@@ -48,7 +51,7 @@ The `--gzip` flag will archive the JSON using GZIP. It is totally safe to use.<b
 The `--rm` flag, or `--removeElems`, will remove the specified page elements, using selectors. This can be used to remove useless elements so you can focus on the important content and reduce the snapshot size.<br>
 The `--css` flag, or `--addCSS`, will add custom CSS on the page, before creating the snapshot. This can be used to change the font size, or move some elements to make the page look nicer.<br>
 The `--drop`, or `--dropRequests` flag, will drop all HTTP requests matching, with regex. This can be used to stop tracking requests and reduce the final snapshot size.<br>
-The `--wait` flag represents how much the browser page will stay open (in miliseconds) to give you time to interact with the page, eg: accept cookies, close popups, scroll a little, hover some images.<br>
+The `--wait` how much the browser page will stay open (in seconds) to allow the user to interact with the page, eg: accept cookies, close popups, scroll a little, hover some images.<br>
 The `--js` flag will stop the browser from executing Javascript and will drop all Javascript requests, which usually reduces the snapshot size by A LOT. NOTE that this option will completely break many pages.<br>
 The `--minify` flag will try to compress the final HTML as much as possible, to reduce the snapshot size. NOTE that this can crash for some pages with lots of Javascript.<br>
 The `--purgeCSS` flag will purge all unused CSS and replace all styles with this processed CSS. This can reduce the snapshot size by A LOT, but will completely break some pages.
@@ -56,7 +59,10 @@ The `--purgeCSS` flag will purge all unused CSS and replace all styles with this
 And a last example, how to capture an Amazon page:
 
 ``` shell
-web-record https://www.amazon.com/dp/B086CV781H --gzip --rm 'script #nav-main #mars-fs-wrapper #rhf #navFooter #navBackToTop' --drop '//fls-na.amazon.com/1 //unagi.amazon.com/1 //unagi-na.amazon.com/1 //cloudfront-labs.amazonaws.com/' --js off --minify --wait 10000
+web-record https://www.amazon.com/dp/B086CV781H --gzip \
+    --rm 'script #nav-main #mars-fs-wrapper #rhf #navFooter #navBackToTop' \
+    --drop '//fls-na.amazon.com/1 //unagi.amazon.com/1 //unagi-na.amazon.com/1 //cloudfront-labs.amazonaws.com/' \
+    --js off --minify --wait 10
 ```
 
 ![Restored Amazon page](img/amazon-kindle.png)

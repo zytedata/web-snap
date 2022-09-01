@@ -33,7 +33,7 @@ const options = {
         minify: null, // min final HTML before save
         purgeCSS: null, // purge unused CSS and generate 1 single CSS file
         timeout: 15 * 1000, // navigation timeout
-        wait: 5 * 1000,
+        wait: 5, // wait for user interaction (seconds)
         // headers: 'content-type, date', // Content-Type header is pretty important
         headers: 'content-type, date, content-language, last-modified, expires', // extended version
         // userAgent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36
@@ -49,6 +49,7 @@ function processArgs(args) {
     args.headless = toBool(args.headless);
     args.minify = toBool(args.minify);
     args.purgeCSS = toBool(args.purgeCSS);
+    args.wait = parseInt(args.wait) * 1000;
 
     args.CSS = args.addCSS ? args.addCSS.trim() : '';
     args.HEADERS = smartSplit(args.headers).map(x => x.toLowerCase());
@@ -98,6 +99,7 @@ function processArgs(args) {
         javaScriptEnabled: args.js,
         userAgent: args.userAgent,
         ignoreHTTPSErrors: true,
+        bypassCSP: true,
         viewport: null,
     });
     const page = await context.newPage();
