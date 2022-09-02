@@ -8,7 +8,7 @@ import { gunzip } from 'zlib';
 import { promisify } from 'util';
 import { chromium } from 'playwright';
 
-import { delay, requestKey, normalizeURL, toBool } from './util.js';
+import { delay, requestKey, normalizeURL, toBool, smartSplit } from './util.js';
 import pkg from '../package.json' assert { type: 'json' };
 
 const options = {
@@ -16,12 +16,14 @@ const options = {
     alias: {
         i: 'input',
         v: 'version',
+        rm: 'removeElems',
         // c: 'config',
     },
     default: {
         js: true, // disable JS execution and capturing
         offline: true,
         wait: 120,
+        removeElems: '', // remove page elements
     },
 };
 
@@ -29,7 +31,9 @@ function processArgs(args) {
     args.js = toBool(args.js);
     args.offline = toBool(args.offline);
     args.wait = parseInt(args.wait) * 1000;
-    console.log(args);
+
+    args.REMOVE = smartSplit(args.removeElems);
+    // console.log(args);
 }
 
 ;(async function main() {
@@ -79,7 +83,7 @@ function processArgs(args) {
         const r = route.request();
         const u = normalizeURL(r.url());
 
-        if (u === normalizeURL(record.url)) {
+        if (u === normalizeURL(record.url) || u === normalizeURL(record.base_url) || u === normalizeURL(record.base_url)) {
             console.log(`Serve INDEX page from record: ${u}`);
             route.fulfill({
                 contentType: 'text/html; charset=utf-8',
@@ -113,7 +117,18 @@ function processArgs(args) {
         route.continue(); // or abort ??
     });
 
-    await page.goto(record.url, { waitUntil: 'networkidle' });
+    // navigate to the resolved URL instead of the user provided one
+    await page.goto(record.base_url, { waitUntil: 'networkidle' });
+
+    for (const selector of args.REMOVE) {
+        console.log('Removing element selector:', selector);
+        await page.evaluate((s) => {
+            for (const el of document.querySelectorAll(s)) {
+                el.parentNode.removeChild(el);
+            }
+        }, selector);
+    }
+
     await delay(args.wait);
     await browser.close();
 })();
