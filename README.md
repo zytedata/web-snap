@@ -85,7 +85,7 @@ The snapshot.json file format is super simple:
     - response_url - the final response URL, after redirects
     - status - a number representing the HTTP status
 
-The format is subject to change, mostly to simplify it.
+The format is subject to change, ideally to simplify it.
 
 
 ## Limitations
@@ -94,7 +94,7 @@ This format doesn't usually capture the audio and the video from the page.<br>
 What it means is you can't capture Youtube, Vimeo, or Spotify pages. (YET? or never?)<br>
 This limitation may change in the future, but it's not the primary goal of the project.
 
-Read my article that compares WARC, rrWeb and recorded:
+Read my article that compares WARC, rrWeb and "recorded":
 https://crlf.link/log/entries/220803-web-snap/
 
 

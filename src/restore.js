@@ -8,11 +8,11 @@ import { gunzip } from 'zlib';
 import { promisify } from 'util';
 import { chromium } from 'playwright';
 
-import { delay, requestKey, normalizeURL } from './util.js';
+import { delay, requestKey, normalizeURL, toBool } from './util.js';
 import pkg from '../package.json' assert { type: 'json' };
 
 const options = {
-    boolean: ['help', 'version', 'js', 'offline'],
+    boolean: ['help', 'version'],
     alias: {
         i: 'input',
         v: 'version',
@@ -21,17 +21,18 @@ const options = {
     default: {
         js: true, // disable JS execution and capturing
         offline: true,
-        wait: 120 * 1000,
+        wait: 120,
     },
 };
 
-function describe(jsHandle) {
-    return jsHandle.evaluate((obj) => {
-        return typeof obj === 'string' ? obj : `${typeof obj}=${obj}`;
-    }, jsHandle);
+function processArgs(args) {
+    args.js = toBool(args.js);
+    args.offline = toBool(args.offline);
+    args.wait = parseInt(args.wait) * 1000;
+    console.log(args);
 }
 
-(async function main() {
+;(async function main() {
     const args = mri(process.argv.slice(2), options);
     // console.log(args);
 
@@ -40,6 +41,7 @@ function describe(jsHandle) {
         return;
     }
 
+    processArgs(args);
     const SNAP = args._[0] || args.input;
     let record = await fs.promises.readFile(SNAP);
     if (SNAP.endsWith('.gz')) {
@@ -69,15 +71,8 @@ function describe(jsHandle) {
     const page = await context.newPage();
     page.on('close', process.exit);
     page.on('console', async (msg) => {
-        const args = await Promise.all(msg.args().map((arg) => describe(arg)));
-        let text = '';
-        for (let i = 1; i < args.length; ++i) {
-            text += `${args[i]} `;
-        }
+        if (msg.text().startsWith('Failed to load resource')) return;
         console.log(`CONSOLE ${msg.type()}: ${msg.text()}`);
-        if (text.trim()) {
-            console.log(text.trim());
-        }
     });
 
     page.route('**', async (route) => {
@@ -105,15 +100,16 @@ function describe(jsHandle) {
             }
             console.log(`Intercept RESTORE request: ${key}`);
             route.fulfill({
-                contentType: cached.headers['content-type'] || '',
+                contentType: contentType || '',
                 body: Buffer.from(cached.body, 'base64'),
                 status: record.status,
-                // headers: cached.headers, // Headers are probably useless here
+                headers: cached.headers, // Some headers may be useful here
             });
             return;
         }
 
         // else
+        console.log(`Missing resource: ${key}`);
         route.continue(); // or abort ??
     });
 

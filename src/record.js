@@ -6,10 +6,12 @@ import fs from 'fs';
 import mri from 'mri';
 import { gzip } from 'zlib';
 import { promisify } from 'util';
+import fetch from 'cross-fetch';
 import playwright from 'playwright';
 import CleanCSS from 'clean-css';
 import { PurgeCSS } from 'purgecss';
 import { minify } from 'html-minifier-terser';
+import { PlaywrightBlocker } from '@cliqz/adblocker-playwright';
 
 import { delay, requestKey, normalizeURL, checkBrowser, toBool, smartSplit } from './util.js';
 
@@ -34,6 +36,7 @@ const options = {
         purgeCSS: null, // purge unused CSS and generate 1 single CSS file
         timeout: 15 * 1000, // navigation timeout
         wait: 5, // wait for user interaction (seconds)
+        blockAds: null, // enable AdBlocker?
         // headers: 'content-type, date', // Content-Type header is pretty important
         headers: 'content-type, date, content-language, last-modified, expires', // extended version
         // userAgent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36
@@ -46,6 +49,7 @@ const options = {
 function processArgs(args) {
     args.gzip = toBool(args.gzip);
     args.js = toBool(args.js);
+    args.blockAds = toBool(args.blockAds);
     args.headless = toBool(args.headless);
     args.minify = toBool(args.minify);
     args.purgeCSS = toBool(args.purgeCSS);
@@ -103,6 +107,11 @@ function processArgs(args) {
         viewport: null,
     });
     const page = await context.newPage();
+
+    if (args.blockAds) {
+        const blocker = await PlaywrightBlocker.fromPrebuiltAdsAndTracking(fetch);
+        await blocker.enableBlockingInPage(page);
+    }
 
     page.on('close', async () => {
         if (args.minify) {
