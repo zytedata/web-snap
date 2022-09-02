@@ -11,6 +11,7 @@ export function requestKey(r) {
 }
 
 export function normalizeURL(url) {
+    if (!url) return '';
     const u = new URL(url.replace(/\/+$/, ''));
     u.hash = '';
     return u.toString();

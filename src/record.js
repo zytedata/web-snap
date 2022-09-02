@@ -38,7 +38,7 @@ const options = {
         wait: 5, // wait for user interaction (seconds)
         blockAds: null, // enable AdBlocker?
         // headers: 'content-type, date', // Content-Type header is pretty important
-        headers: 'content-type, date, content-language, last-modified, expires', // extended version
+        headers: 'content-type, content-length, date, content-language, last-modified', // extended version
         // userAgent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36
         dropRequests: '', // drop matching requests
         removeElems: '', // remove page elements
@@ -93,7 +93,7 @@ function processArgs(args) {
         return Object.fromEntries(Object.entries(headers).filter(([key]) => HEADERS.includes(key)));
     };
 
-    const snapshot = { url: URI, html: '', responses: {} };
+    const snapshot = { url: URI, base_url: '', canonical_url: '', html: '', responses: {} };
 
     // XXX -- persistent context seems broken
     // const context = await playwright.firefox.launchPersistentContext('~/.mozilla/firefox/..', {headless: args.headless});
@@ -166,22 +166,32 @@ function processArgs(args) {
             console.error('Remote server error', status, u);
             return;
         }
-        console.log('Request:', requestKey(r), response.status());
+        const key = requestKey(r);
+        console.log('Request:', key, response.status());
         const headers = restrictHeaders(response);
-        let buffer;
+        let body;
         try {
-            buffer = await response.body();
+            const buffer = await response.body();
+            body = buffer.toString('base64');
         } catch (err) {
-            console.error('Cannot save response for:', u);
+            console.error('ERR saving response for:', u, err);
             return;
         }
-        snapshot.responses[requestKey(r)] = {
-            body: buffer.toString('base64'),
-            headers,
-            request_url: u,
-            response_url: response.url(),
-            status,
-        };
+        // if the request was NOT cached, or it WAS cached
+        // and the new request is successful (overwrite with fresh data)
+        if (!snapshot.responses[key] || (snapshot.responses[key] && snapshot.responses[key].status === 200)) {
+            snapshot.responses[key] = {
+                body,
+                headers,
+                request_url: u,
+                status,
+            };
+            if (u !== response.url()) {
+                snapshot.responses[key] = {
+                    response_url: response.url(),
+                };
+            }
+        }
     });
 
     try {
@@ -193,8 +203,6 @@ function processArgs(args) {
 
     // initial snapshot
     snapshot.html = (await page.content()).trim();
-    // resolved base URL
-    snapshot.base_url = await page.evaluate('document.baseURI');
 
     try {
         console.log('Waiting for images to load...');
@@ -202,6 +210,21 @@ function processArgs(args) {
     } catch (err) {
         console.error('Images timeout:', err);
     }
+
+    // resolved base URL
+    snapshot.base_url = await page.evaluate('document.baseURI');
+    // resolved canonical URL
+    snapshot.canonical_url = await page.evaluate(`(document.querySelector("link[rel='canonical']") || document.createElement('link')).getAttribute('href')`);
+    // delete possible index duplicates, when user URL != resolved URL
+    let baseKey = `GET:${snapshot.base_url}`;
+    if (snapshot.responses[baseKey] && snapshot.responses[baseKey].body) {
+        delete snapshot.responses[baseKey];
+    }
+    baseKey = `GET:${snapshot.canonical_url}`;
+    if (snapshot.responses[baseKey] && snapshot.responses[baseKey].body) {
+        delete snapshot.responses[baseKey];
+    }
+    baseKey = null;
 
     for (const selector of REMOVE) {
         console.log('Removing element selector:', selector);
