@@ -22,7 +22,7 @@ export function checkBrowser(str) {
 }
 
 export function toBool(str) {
-    if (!str) return false;
+    if (!str) return !!str;
     if (typeof str !== 'string') return str;
     str = str.toLowerCase();
     if (str === 'false' || str === 'off' || str === 'no' || str === '0') return false;
@@ -30,6 +30,7 @@ export function toBool(str) {
 }
 
 export function smartSplit(str) {
+    if (!str) return [];
     if (typeof str !== 'string') return str;
     const split = [];
     for (let s of str.split(/[,; ]+/)) {

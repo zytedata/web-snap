@@ -11,6 +11,10 @@
     "playwright": "1.25.1",
     "purgecss": "4.1.3"
   },
+  "devDependencies": {
+    "ava": "4.3.3",
+    "create-test-server": "3.0.1"
+  },
   "main": "src",
   "type": "module",
   "name": "web-snap",
@@ -22,7 +26,10 @@
     "url": "git://github.com/croqaz/web-snap.git"
   },
   "bin": {
-    "web-record": "src/record.js",
-    "web-restore": "src/restore.js"
+    "web-record": "cli/record.js",
+    "web-restore": "cli/restore.js"
+  },
+  "scripts": {
+    "test": "npx ava --verbose test/*.test.js"
   }
 }

@@ -1,50 +1,13 @@
-#!/usr/bin/env node
 /*
  * Record a page.
  */
-import fs from 'fs';
-import mri from 'mri';
-import { gzip } from 'zlib';
-import { promisify } from 'util';
 import fetch from 'cross-fetch';
 import playwright from 'playwright';
 import CleanCSS from 'clean-css';
 import { PurgeCSS } from 'purgecss';
-import { minify } from 'html-minifier-terser';
 import { PlaywrightBlocker } from '@cliqz/adblocker-playwright';
 
 import { delay, requestKey, normalizeURL, checkBrowser, toBool, smartSplit } from './util.js';
-
-const options = {
-    boolean: ['help', 'version'],
-    alias: {
-        i: 'input',
-        o: 'output',
-        v: 'version',
-        z: 'gzip',
-        css: 'addCSS',
-        rm: 'removeElems',
-        drop: 'dropRequests',
-    },
-    default: {
-        browser: 'chromium',
-        gzip: null, // compress final JSON
-        headless: null, // visible browser window
-        imgTimeout: 15 * 1000,
-        js: 'on', // disable JS execution and capturing
-        minify: null, // min final HTML before save
-        purgeCSS: null, // purge unused CSS and generate 1 single CSS file
-        timeout: 15 * 1000, // navigation timeout
-        wait: 5, // wait for user interaction (seconds)
-        blockAds: null, // enable AdBlocker?
-        // headers: 'content-type, date', // Content-Type header is pretty important
-        headers: 'content-type, content-length, date, content-language, last-modified', // extended version
-        // userAgent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36
-        dropRequests: '', // drop matching requests
-        removeElems: '', // remove page elements
-        addCSS: '', // add extra CSS
-    },
-};
 
 function processArgs(args) {
     args.gzip = toBool(args.gzip);
@@ -53,50 +16,33 @@ function processArgs(args) {
     args.headless = toBool(args.headless);
     args.minify = toBool(args.minify);
     args.purgeCSS = toBool(args.purgeCSS);
-    args.wait = parseInt(args.wait) * 1000;
 
-    args.CSS = args.addCSS ? args.addCSS.trim() : '';
-    args.HEADERS = smartSplit(args.headers).map(x => x.toLowerCase());
+    args.wait = parseInt(args.wait) * 1000;
+    args.timeout = parseInt(args.timeout) * 1000;
+    args.imgTimeout = parseInt(args.imgTimeout) * 1000;
+    if (!args.browser) args.browser = 'chromium';
+
+    args.DROP = smartSplit(args.dropRequests).map((x) => new RegExp(x, 'i'));
+    args.HEADERS = smartSplit(args.headers).map((x) => x.toLowerCase());
     args.REMOVE = smartSplit(args.removeElems);
-    // console.log(args);
+    args.CSS = args.addCSS ? args.addCSS.trim() : '';
+
+    args.URI = args._ ? args._[0] : null || args.input || args.url;
+    let HOST = new URL(args.URI).host;
+    if (HOST.startsWith('www.')) HOST = HOST.slice(4);
+    let OUT = args._ ? args._[1] : null || args.output;
+    if (!OUT) OUT = `snapshot_${HOST}.json`;
+    if (args.gzip && !OUT.endsWith('.gz')) OUT += '.gz';
+    args.OUT = OUT;
 }
 
-;(async function main() {
-    const args = mri(process.argv.slice(2), options);
-
-    if (args.version) {
-        console.log('Web-Snap v' + pkg.version);
-        return;
-    }
+export async function recordPage(args) {
+    processArgs(args);
 
     if (!checkBrowser(args.browser)) {
         console.error(`Invalid browser name "${args.browser}"! Cannot launch!`);
+        return;
     }
-
-    processArgs(args);
-    const { CSS, HEADERS, REMOVE } = args;
-    const URI = args._[0] || args.input;
-
-    let HOST = new URL(URI).host;
-    if (HOST.startsWith('www.')) HOST = HOST.slice(4);
-    let OUT = args._[1] || args.output;
-    if (!OUT) OUT = `snapshot_${HOST}.json`;
-    if (args.gzip && !OUT.endsWith('.gz')) OUT += '.gz';
-
-    const DROP = [];
-    for (const re of smartSplit(args.dropRequests)) {
-        DROP.push(new RegExp(re, 'i'));
-    }
-
-    const restrictHeaders = function (resp) {
-        const headers = resp.headers();
-        return Object.fromEntries(Object.entries(headers).filter(([key]) => HEADERS.includes(key)));
-    };
-
-    const snapshot = { url: URI, base_url: '', canonical_url: '', html: '', responses: {} };
-
-    // XXX -- persistent context seems broken
-    // const context = await playwright.firefox.launchPersistentContext('~/.mozilla/firefox/..', {headless: args.headless});
 
     const browser = await playwright[args.browser].launch({ headless: args.headless });
     const context = await browser.newContext({
@@ -113,40 +59,30 @@ function processArgs(args) {
         await blocker.enableBlockingInPage(page);
     }
 
-    page.on('close', async () => {
-        if (args.minify) {
-            try {
-                snapshot.html = await minify(snapshot.html, {
-                    removeAttributeQuotes: true,
-                    sortAttributes: true,
-                    sortClassName: true,
-                });
-            } catch (err) {
-                console.error('Cannot minify!', err);
-            }
-        }
-        if (args.gzip) {
-            const record = await promisify(gzip)(JSON.stringify(snapshot));
-            await fs.promises.writeFile(OUT, record, { encoding: 'utf8' });
-        } else {
-            await fs.promises.writeFile(OUT, JSON.stringify(snapshot, null, 2), { encoding: 'utf8' });
-        }
-        console.log(`Snapshot file: "${OUT}" was saved`);
-        process.exit();
-    });
+    const snapshot = await internalRecordPage(args, page);
 
-    page.route('**', async (route) => {
-        const r = route.request();
-        const u = normalizeURL(r.url());
-        for (const re of DROP) {
-            if (re.test(u)) {
-                console.log('Drop matching request:', re, u);
-                route.abort();
-                return;
+    return [snapshot, page, browser];
+}
+
+async function internalRecordPage(args, page) {
+    const { URI, DROP, HEADERS, REMOVE, CSS } = args;
+
+    if (DROP && DROP.length) {
+        page.route('**', async (route) => {
+            const r = route.request();
+            const u = normalizeURL(r.url());
+            for (const re of DROP) {
+                if (re.test(u)) {
+                    console.log('Drop matching request:', re, u);
+                    route.abort();
+                    return;
+                }
             }
-        }
-        route.continue();
-    });
+            route.continue();
+        });
+    }
+
+    const snapshot = { url: URI, base_url: '', canonical_url: '', html: '', responses: {} };
 
     page.on('response', async (response) => {
         const r = response.request();
@@ -168,7 +104,11 @@ function processArgs(args) {
         }
         const key = requestKey(r);
         console.log('Request:', key, response.status());
-        const headers = restrictHeaders(response);
+
+        // restrict headers to subset
+        let headers = Object.entries(response.headers()).filter(([key]) => HEADERS.includes(key));
+        headers = Object.fromEntries(headers);
+
         let body;
         try {
             const buffer = await response.body();
@@ -204,25 +144,32 @@ function processArgs(args) {
     // initial snapshot
     snapshot.html = (await page.content()).trim();
 
-    try {
-        console.log('Waiting for images to load...');
-        await page.waitForSelector('img', { timeout: args.imgTimeout });
-    } catch (err) {
-        console.error('Images timeout:', err);
+    const imgCount = await page.locator('img').count();
+    if (imgCount > 0) {
+        try {
+            console.log('Waiting for images to load...');
+            await page.waitForSelector('img', { timeout: args.imgTimeout });
+        } catch (err) {
+            console.error('Images timeout:', err);
+        }
     }
 
     // resolved base URL
     snapshot.base_url = await page.evaluate('document.baseURI');
     // resolved canonical URL
-    snapshot.canonical_url = await page.evaluate(`(document.querySelector("link[rel='canonical']") || document.createElement('link')).getAttribute('href')`);
+    snapshot.canonical_url = await page.evaluate(
+        `(document.querySelector("link[rel='canonical']") || document.createElement('link')).getAttribute('href')`,
+    );
     // delete possible index duplicates, when user URL != resolved URL
     let baseKey = `GET:${snapshot.base_url}`;
     if (snapshot.responses[baseKey] && snapshot.responses[baseKey].body) {
         delete snapshot.responses[baseKey];
     }
-    baseKey = `GET:${snapshot.canonical_url}`;
-    if (snapshot.responses[baseKey] && snapshot.responses[baseKey].body) {
-        delete snapshot.responses[baseKey];
+    if (snapshot.canonical_url) {
+        baseKey = `GET:${snapshot.canonical_url}`;
+        if (snapshot.responses[baseKey] && snapshot.responses[baseKey].body) {
+            delete snapshot.responses[baseKey];
+        }
     }
     baseKey = null;
 
@@ -235,7 +182,7 @@ function processArgs(args) {
         }, selector);
     }
 
-    if (CSS) {
+    if (CSS && CSS.length) {
         console.log('Adding custom CSS...');
         await page.evaluate((css) => {
             const cssHack = document.createElement('style');
@@ -269,7 +216,7 @@ function processArgs(args) {
         });
         const joinedCSS = purgedCSS.map(({ css }) => css.trim()).join('\n');
         const finalCSS = new CleanCSS({ mergeAdjacentRules: true }).minify(joinedCSS);
-        console.log(finalCSS.stats);
+        console.log('Stats:', finalCSS.stats);
 
         console.log('Replacing existing CSS...');
         await page.evaluate(() => {
@@ -283,7 +230,10 @@ function processArgs(args) {
             cssHack.innerText = css;
             document.head.appendChild(cssHack);
         }, finalCSS.styles);
-        snapshot.html = await page.content();
+
+        // final snapshot
+        snapshot.html = (await page.content()).trim();
+        // remove obsolete CSS resources
         for (const k of Object.keys(snapshot.responses)) {
             const res = snapshot.responses[k];
             if (res.headers['content-type'] && res.headers['content-type'].startsWith('text/css')) {
@@ -294,10 +244,5 @@ function processArgs(args) {
         }
     }
 
-    await delay(args.wait);
-
-    // final snapshot
-    snapshot.html = (await page.content()).trim();
-
-    await browser.close();
-})();
+    return snapshot;
+}

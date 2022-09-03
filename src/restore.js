@@ -1,61 +1,43 @@
-#!/usr/bin/env node
 /*
  * Restore a recorded page.
  */
 import fs from 'fs';
-import mri from 'mri';
 import { gunzip } from 'zlib';
 import { promisify } from 'util';
 import { chromium } from 'playwright';
 
-import { delay, requestKey, normalizeURL, toBool, smartSplit } from './util.js';
-import pkg from '../package.json' assert { type: 'json' };
+import { requestKey, normalizeURL, toBool, smartSplit } from './util.js';
 
-const options = {
-    boolean: ['help', 'version'],
-    alias: {
-        i: 'input',
-        v: 'version',
-        rm: 'removeElems',
-        // c: 'config',
-    },
-    default: {
-        js: true, // disable JS execution and capturing
-        offline: true,
-        wait: 120,
-        removeElems: '', // remove page elements
-    },
-};
-
-function processArgs(args) {
+async function processArgs(args) {
     args.js = toBool(args.js);
+    args.headless = toBool(args.headless); // debug & tests
     args.offline = toBool(args.offline);
     args.wait = parseInt(args.wait) * 1000;
-
     args.REMOVE = smartSplit(args.removeElems);
-    // console.log(args);
+
+    const snap = args._ ? args._[0] : null || args.input;
+    if (snap) {
+        let record = await fs.promises.readFile(snap);
+        if (snap.endsWith('.gz')) {
+            record = await promisify(gunzip)(record);
+        }
+        args.RECORD = JSON.parse(record);
+    }
 }
 
-;(async function main() {
-    const args = mri(process.argv.slice(2), options);
-    // console.log(args);
+export async function restorePage(args) {
+    await processArgs(args);
+    const record = args.RECORD;
 
-    if (args.version) {
-        console.log('Web-Snap v' + pkg.version);
+    if (!record) {
+        console.error(`Empty snapshot file! Cannot launch!`);
         return;
     }
 
-    processArgs(args);
-    const SNAP = args._[0] || args.input;
-    let record = await fs.promises.readFile(SNAP);
-    if (SNAP.endsWith('.gz')) {
-        record = await promisify(gunzip)(record);
-    }
-    record = JSON.parse(record);
     console.log('Restoring URL:', record.url);
 
     const browser = await chromium.launch({
-        headless: false,
+        headless: args.headless,
         args: [
             '--disable-web-security',
             '--disable-site-isolation-trials',
@@ -63,7 +45,7 @@ function processArgs(args) {
             '--allow-running-insecure-content',
         ],
     });
-    browser.on('disconnected', process.exit);
+
     const context = await browser.newContext({
         acceptInsecureCerts: true,
         ignoreHTTPSErrors: true,
@@ -73,7 +55,6 @@ function processArgs(args) {
     });
 
     const page = await context.newPage();
-    page.on('close', process.exit);
     page.on('console', async (msg) => {
         if (msg.text().startsWith('Failed to load resource')) return;
         console.log(`CONSOLE ${msg.type()}: ${msg.text()}`);
@@ -83,8 +64,8 @@ function processArgs(args) {
         const r = route.request();
         const u = normalizeURL(r.url());
 
-        if (u === normalizeURL(record.url) || u === normalizeURL(record.base_url) || u === normalizeURL(record.base_url)) {
-            console.log(`Serve INDEX page from record: ${u}`);
+        if (u === normalizeURL(record.url) || u === normalizeURL(record.base_url)) {
+            console.log(`Restored INDEX from CACHE: ${u}`);
             route.fulfill({
                 contentType: 'text/html; charset=utf-8',
                 body: record.html,
@@ -102,7 +83,7 @@ function processArgs(args) {
                 route.fulfill({ status: 204 });
                 return;
             }
-            console.log(`Intercept RESTORE request: ${key}`);
+            console.log(`Restored from CACHE: ${key}`);
             route.fulfill({
                 contentType: contentType || '',
                 body: Buffer.from(cached.body, 'base64'),
@@ -113,7 +94,7 @@ function processArgs(args) {
         }
 
         // else
-        console.log(`Missing resource: ${key}`);
+        console.log(`MISSING resource: ${key}`);
         route.continue(); // or abort ??
     });
 
@@ -129,6 +110,5 @@ function processArgs(args) {
         }, selector);
     }
 
-    await delay(args.wait);
-    await browser.close();
-})();
+    return [page, browser];
+}
