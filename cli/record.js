@@ -24,15 +24,16 @@ const options = {
         browser: 'chromium',
         gzip: null, // compress final JSON
         headless: null, // visible browser window
+        blockAds: null, // enable AdBlocker?
         imgTimeout: 15,
         js: 'on', // disable JS execution and capturing
         minify: null, // min final HTML before save
         purgeCSS: null, // purge unused CSS and generate 1 single CSS file
         timeout: 15, // navigation timeout
         wait: 5, // wait for user interaction (seconds)
-        blockAds: null, // enable AdBlocker?
         // headers: 'content-type, date', // Content-Type header is pretty important
         headers: 'content-type, content-length, date, content-language, last-modified', // extended version
+        userAgent: '', // custom user agent
         // userAgent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36
         dropRequests: '', // drop matching requests
         removeElems: '', // remove page elements

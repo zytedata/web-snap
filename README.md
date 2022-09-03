@@ -74,17 +74,17 @@ If you care about the snapshot size, you need to try different options depending
 
 ## File format
 
-The snapshot.json file format is super simple:
+The `snapshot.json` file format is simple:
 
 - url - is the URL specified when creating the snapshot
 - base_url - this is the resolved URL, after redirects (eg: may redirect to HTTPS and www.)
-- canonical_url - this is the canonical URL of the page
+- canonical_url - (optional) this is the canonical URL of the page
 - html - is the final, settled HTML of the page
 - responses - contains all the resources of the page (CSS, JS, images, etc) as key-value pairs:
     - body - the resource body saved as Base64
     - headers - a limited subset of the response headers
     - request_url - the initial resource URL
-    - response_url - the final response URL, after redirects (if it's different than the request URL)
+    - response_url - (optional) the final response URL, after redirects (if it's different than the request URL)
     - status - a number representing the HTTP status
 
 The format is subject to change, ideally to simplify it.
@@ -108,6 +108,7 @@ https://crlf.link/log/entries/220803-web-snap/
 - https://github.com/go-shiori/obelisk
 - https://github.com/danburzo/percollate
 - https://github.com/croqaz/clean-mark
+- https://github.com/gildas-lormeau/SingleFile
 - https://github.com/sindresorhus/capture-website
 
 Also check:

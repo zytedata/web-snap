@@ -7,7 +7,7 @@ import CleanCSS from 'clean-css';
 import { PurgeCSS } from 'purgecss';
 import { PlaywrightBlocker } from '@cliqz/adblocker-playwright';
 
-import { delay, requestKey, normalizeURL, checkBrowser, toBool, smartSplit } from './util.js';
+import { requestKey, normalizeURL, checkBrowser, toBool, smartSplit } from './util.js';
 
 function processArgs(args) {
     args.gzip = toBool(args.gzip);
