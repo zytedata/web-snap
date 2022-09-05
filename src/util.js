@@ -1,6 +1,8 @@
 /*
  * Common utils
  */
+import fs from 'fs';
+import { promisify } from 'util';
 
 export function delay(time) {
     return new Promise((resolve) => setTimeout(resolve, time));
@@ -39,4 +41,12 @@ export function smartSplit(str) {
         }
     }
     return split;
+}
+
+export async function parseSnapshot(fname) {
+    let record = await fs.promises.readFile(fname);
+    if (fname.endsWith('.gz')) {
+        record = await promisify(gunzip)(record);
+    }
+    return JSON.parse(record);
 }

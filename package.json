@@ -27,7 +27,8 @@
   },
   "bin": {
     "web-record": "cli/record.js",
-    "web-restore": "cli/restore.js"
+    "web-restore": "cli/restore.js",
+    "snap-stats": "cli/stats.js"
   },
   "scripts": {
     "test": "npx ava --verbose test/*.test.js"

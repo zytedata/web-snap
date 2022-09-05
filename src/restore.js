@@ -1,12 +1,9 @@
 /*
  * Restore a recorded page.
  */
-import fs from 'fs';
-import { gunzip } from 'zlib';
-import { promisify } from 'util';
 import { chromium } from 'playwright';
 
-import { requestKey, normalizeURL, toBool, smartSplit } from './util.js';
+import { requestKey, normalizeURL, toBool, smartSplit, parseSnapshot } from './util.js';
 
 async function processArgs(args) {
     args.js = toBool(args.js);
@@ -17,11 +14,7 @@ async function processArgs(args) {
 
     const snap = args._ ? args._[0] : null || args.input;
     if (snap) {
-        let record = await fs.promises.readFile(snap);
-        if (snap.endsWith('.gz')) {
-            record = await promisify(gunzip)(record);
-        }
-        args.RECORD = JSON.parse(record);
+        args.RECORD = await parseSnapshot(snap);
     }
 }
 
