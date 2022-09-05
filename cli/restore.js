@@ -15,8 +15,8 @@ const options = {
     },
     default: {
         headless: null, // visible browser window
-        js: true, // disable JS execution and capturing
-        offline: true,
+        js: 'yes', // JS execution on restore
+        offline: 'yes', // force browser offline
         wait: 120, // keep the browser open (seconds)
         removeElems: '', // remove page elements
     },
