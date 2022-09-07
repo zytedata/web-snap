@@ -21,15 +21,16 @@ const options = {
         drop: 'dropRequests',
     },
     default: {
-        browser: 'chromium',
+        // browser: 'chromium', // only Chromium supported for now
         gzip: null, // compress final JSON
         headless: null, // visible browser window
         blockAds: null, // enable AdBlocker?
-        imgTimeout: 15,
+        iframes: null, // capture iframes?
         js: 'on', // disable JS execution and capturing
         minify: null, // min final HTML before save
         purgeCSS: null, // purge unused CSS and generate 1 single CSS file
         timeout: 15, // navigation timeout
+        imgTimeout: 15,
         wait: 5, // wait for user interaction (seconds)
         // headers: 'content-type, date', // Content-Type header is pretty important
         headers: 'content-type, content-length, date, content-language, last-modified', // extended version

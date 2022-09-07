@@ -7,20 +7,20 @@ import CleanCSS from 'clean-css';
 import { PurgeCSS } from 'purgecss';
 import { PlaywrightBlocker } from '@cliqz/adblocker-playwright';
 
-import { requestKey, normalizeURL, checkBrowser, toBool, smartSplit } from './util.js';
+import { requestKey, normalizeURL, toBool, smartSplit } from './util.js';
 
 function processArgs(args) {
     args.gzip = toBool(args.gzip);
     args.js = toBool(args.js);
     args.blockAds = toBool(args.blockAds);
     args.headless = toBool(args.headless);
+    args.iframes = toBool(args.iframes);
     args.minify = toBool(args.minify);
     args.purgeCSS = toBool(args.purgeCSS);
 
     args.wait = parseInt(args.wait) * 1000;
     args.timeout = parseInt(args.timeout) * 1000;
     args.imgTimeout = parseInt(args.imgTimeout) * 1000;
-    if (!args.browser) args.browser = 'chromium';
 
     args.DROP = smartSplit(args.dropRequests).map((x) => new RegExp(x, 'i'));
     args.HEADERS = smartSplit(args.headers).map((x) => x.toLowerCase());
@@ -39,12 +39,8 @@ function processArgs(args) {
 export async function recordPage(args) {
     processArgs(args);
 
-    if (!checkBrowser(args.browser)) {
-        console.error(`Invalid browser name "${args.browser}"! Cannot launch!`);
-        return;
-    }
-
-    const browser = await playwright[args.browser].launch({ headless: args.headless });
+    // only Chromium supported for now
+    const browser = await playwright.chromium.launch({ headless: args.headless });
     const context = await browser.newContext({
         javaScriptEnabled: args.js,
         userAgent: args.userAgent,
@@ -114,9 +110,17 @@ async function internalRecordPage(args, page) {
             const buffer = await response.body();
             body = buffer.toString('base64');
         } catch (err) {
-            console.error('ERR saving response for:', u, err);
-            return;
+            const frame = page.frame({ url: u });
+            if (frame && args.iframes) {
+                console.log('Capture IFRAME content for:', frame.url());
+                const content = (await frame.content()).trim()
+                body = new Buffer.from(content, 'binary').toString('base64');
+            } else {
+                console.error('ERR saving response for:', u, err);
+                return;
+            }
         }
+
         // if the request was NOT cached, or it WAS cached
         // and the new request is successful (overwrite with fresh data)
         if (!snapshot.responses[key] || (snapshot.responses[key] && snapshot.responses[key].status === 200)) {
