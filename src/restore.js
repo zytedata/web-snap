@@ -116,5 +116,5 @@ export async function restorePage(args) {
         }, selector);
     }
 
-    return [page, browser];
+    return { page, context, browser };
 }

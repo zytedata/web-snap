@@ -2,6 +2,7 @@
  * Common utils
  */
 import fs from 'fs';
+import { gunzip } from 'zlib';
 import { promisify } from 'util';
 
 export function delay(time) {

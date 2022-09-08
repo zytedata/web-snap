@@ -31,7 +31,7 @@ const options = {
         return;
     }
 
-    const [page, browser] = await restorePage(args);
+    const { page, browser } = await restorePage(args);
     page.on('close', process.exit);
     browser.on('disconnected', process.exit);
 

@@ -57,7 +57,7 @@ export async function recordPage(args) {
 
     const snapshot = await internalRecordPage(args, page);
 
-    return [snapshot, page, browser];
+    return { snapshot, page, context, browser };
 }
 
 async function internalRecordPage(args, page) {

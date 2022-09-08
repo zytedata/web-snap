@@ -50,7 +50,7 @@ const options = {
         return;
     }
 
-    const [snapshot, page, browser] = await recordPage(args);
+    const { snapshot, page, context, browser } = await recordPage(args);
 
     page.on('close', async () => {
         if (args.minify) {
