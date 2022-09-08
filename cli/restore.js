@@ -17,6 +17,7 @@ const options = {
         headless: null, // visible browser window
         js: 'yes', // JS execution on restore
         offline: 'yes', // force browser offline
+        timeout: 15, // navigation timeout
         wait: 120, // keep the browser open (seconds)
         removeElems: '', // remove page elements
     },

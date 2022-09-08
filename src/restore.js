@@ -9,6 +9,7 @@ async function processArgs(args) {
     args.js = toBool(args.js);
     args.headless = toBool(args.headless); // debug & tests
     args.offline = toBool(args.offline);
+    args.timeout = parseInt(args.timeout) * 1000;
     args.wait = parseInt(args.wait) * 1000;
     args.REMOVE = smartSplit(args.removeElems);
 
@@ -52,6 +53,7 @@ export async function restorePage(args) {
         if (msg.text().startsWith('Failed to load resource')) return;
         console.log(`CONSOLE ${msg.type()}: ${msg.text()}`);
     });
+    page.setDefaultTimeout(args.timeout);
 
     page.route('**', async (route) => {
         const r = route.request();
@@ -71,7 +73,12 @@ export async function restorePage(args) {
         if (cached && cached.body) {
             // ignore all javascript requests on restore, when JS disabled
             const contentType = cached.headers['content-type'];
-            if (!args.js && (contentType === 'text/javascript' || contentType === 'application/javascript')) {
+            if (
+                !args.js &&
+                (contentType.startsWith('text/javascript') ||
+                    contentType.startsWith('application/javascript') ||
+                    contentType.startsWith('application/x-javascript'))
+            ) {
                 // HTTP 204 = NO CONTENT
                 route.fulfill({ status: 204 });
                 return;
@@ -94,8 +101,14 @@ export async function restorePage(args) {
     // navigate to the resolved URL instead of the user provided one
     await page.goto(record.base_url, { waitUntil: 'networkidle' });
 
+    // overwrite page content with the one from the snapshot, to fix potential JS issues
+    if (args.js) {
+        console.log('REWRITE page content from snapshot..');
+        page.setContent(record.html);
+    }
+
     for (const selector of args.REMOVE) {
-        console.log('Removing element selector:', selector);
+        console.log('REMOVE element selector:', selector);
         await page.evaluate((s) => {
             for (const el of document.querySelectorAll(s)) {
                 el.parentNode.removeChild(el);
