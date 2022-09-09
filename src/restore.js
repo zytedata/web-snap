@@ -41,21 +41,24 @@ export async function restorePage(args) {
     });
 
     const context = await browser.newContext({
+        bypassCSP: true,
         acceptInsecureCerts: true,
         ignoreHTTPSErrors: true,
         javaScriptEnabled: args.js,
         offline: args.offline,
+        // serviceWorkers: 'block',
         viewport: null,
     });
 
     const page = await context.newPage();
+
     page.on('console', async (msg) => {
         if (msg.text().startsWith('Failed to load resource')) return;
         console.log(`CONSOLE ${msg.type()}: ${msg.text()}`);
     });
-    page.setDefaultTimeout(args.timeout);
 
-    page.route('**', async (route) => {
+    page.setDefaultTimeout(args.timeout);
+    await page.route('**', async (route) => {
         const r = route.request();
         const u = normalizeURL(r.url());
 

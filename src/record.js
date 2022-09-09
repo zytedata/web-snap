@@ -44,8 +44,9 @@ export async function recordPage(args) {
     const context = await browser.newContext({
         javaScriptEnabled: args.js,
         userAgent: args.userAgent,
-        ignoreHTTPSErrors: true,
         bypassCSP: true,
+        ignoreHTTPSErrors: true,
+        serviceWorkers: 'block',
         viewport: null,
     });
     const page = await context.newPage();
@@ -90,16 +91,21 @@ async function internalRecordPage(args, page) {
         if (u === normalizeURL(URI)) return;
         const status = response.status();
         // ignore redirect requests, they will be saved after resolved
-        if (status >= 300 && status <= 399) {
+        if (status >= 300 && status < 400) {
             console.log('Redirect from:', u, 'to:', response.headers()['location']);
             return;
-        }
-        if (status >= 500) {
+        } else if (status >= 500) {
+            // don't save server error responses
             console.error('Remote server error', status, u);
             return;
         }
+        // else if (status >= 400 && status < 500) {
+        //     // should we save client error responses?
+        //     console.error('Ignoring client error', status, u);
+        //     return;
+        // }
         const key = requestKey(r);
-        console.log('Request:', key, response.status());
+        console.log('Response:', status, key);
 
         // restrict headers to subset
         let headers = Object.entries(response.headers()).filter(([key]) => HEADERS.includes(key));
@@ -113,11 +119,18 @@ async function internalRecordPage(args, page) {
             const frame = page.frame({ url: u });
             if (frame && args.iframes) {
                 console.log('Capture IFRAME content for:', frame.url());
-                const content = (await frame.content()).trim()
+                const content = (await frame.content()).trim();
                 body = new Buffer.from(content, 'binary').toString('base64');
-            } else {
-                console.error('ERR saving response for:', u, err);
-                return;
+            } else if (status !== 204) {
+                console.error('ERR saving response for:', status, u, err);
+                // try {
+                //     response = await page.request.fetch(r, { ignoreHTTPSErrors: true, failOnStatusCode: true });
+                //     const buffer = await response.body();
+                //     body = buffer.toString('base64');
+                //     console.log('SUCCESS FETCH:', key);
+                // } catch (err) {
+                //     console.error('FETCH ERR', err);
+                // }
             }
         }
 

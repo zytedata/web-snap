@@ -33,7 +33,7 @@ const options = {
         imgTimeout: 15,
         wait: 5, // wait for user interaction (seconds)
         // headers: 'content-type, date', // Content-Type header is pretty important
-        headers: 'content-type, content-length, date, content-language, last-modified', // extended version
+        headers: 'content-type, content-length, content-range, date, content-language, last-modified', // extended version
         userAgent: '', // custom user agent
         // userAgent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36
         dropRequests: '', // drop matching requests
