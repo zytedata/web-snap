@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import mri from 'mri';
+import prettyBytes from 'pretty-bytes';
 
 import { parseSnapshot } from '../src/util.js';
 
@@ -35,21 +36,23 @@ function bar(value, maxValue) {
             else resourceTypes[t] = 1;
             return [k, v.body ? v.body.length : 0];
         })
-        .filter(([_, v]) => v >= maxValue / 12);
+        .filter(([_, v]) => v >= maxValue / 20 && v > 100);
     const totSize = data.reduce((sum, curr) => sum + curr[1], 0);
 
-    console.log(`\nHTML size is ${snap.html.length}`);
-    console.log(`Resources size is ${totSize}`);
+    console.log(`\nHTML body size: ${prettyBytes(snap.html.length, { minimumFractionDigits: 2 })}`);
+    console.log(`Resources size: ${prettyBytes(totSize, { minimumFractionDigits: 2 })}`);
     console.log(`There are ${Object.keys(snap.responses).length} resources in total`);
 
     data.push(['GET:HTML body', snap.html.length]);
 
     data.sort((a, b) => b[1] - a[1]);
     console.log('\nTop resources by size::');
-    for (const item of data.slice(0, 10)) {
-        const barText = bar(item[1], maxValue);
-        const suffix = ' ' + item[1];
-        console.log(item[0].slice(4).replace(/^https?:\/\/(w+\.)?/, ''));
+    for (const [txt, nr] of data.slice(0, 10)) {
+        const barText = bar(nr, maxValue);
+        const suffix = ' ' + prettyBytes(nr, { minimumFractionDigits: 2 });
+        let http = txt.slice(4).replace(/^https?:\/\/(w+\.)?/, '');
+        if (http.length > 165) http = http.slice(0, 160) + ' ... ' + http.slice(-5);
+        console.log(http);
         console.log(barText + suffix);
     }
 
@@ -57,10 +60,9 @@ function bar(value, maxValue) {
     resourceTypes = Array.from(Object.entries(resourceTypes));
     resourceTypes.sort((a, b) => b[1] - a[1]);
     maxValue = resourceTypes[0][1];
-    for (const item of resourceTypes) {
-        const barText = bar(item[1], maxValue);
-        const suffix = ' ' + item[1];
-        console.log(item[0]);
-        console.log(barText + suffix);
+    for (const [txt, nr] of resourceTypes) {
+        const barText = bar(nr, maxValue);
+        const suffix = ' ' + nr;
+        console.log(txt + '\n' + barText + suffix);
     }
 })();
