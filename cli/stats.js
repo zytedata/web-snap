@@ -50,7 +50,8 @@ function bar(value, maxValue) {
     for (const [txt, nr] of data.slice(0, 10)) {
         const barText = bar(nr, maxValue);
         const suffix = ' ' + prettyBytes(nr, { minimumFractionDigits: 2 });
-        let http = txt.slice(4).replace(/^https?:\/\/(w+\.)?/, '');
+        let http = txt.split(':').slice(1).join(':');
+        http = http.replace(/^https?:\/\/(w+?\.)?/, '');
         if (http.length > 165) http = http.slice(0, 160) + ' ... ' + http.slice(-5);
         console.log(http);
         console.log(barText + suffix);

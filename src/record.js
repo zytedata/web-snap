@@ -13,6 +13,7 @@ function processArgs(args) {
     args.gzip = toBool(args.gzip);
     args.js = toBool(args.js);
     args.blockAds = toBool(args.blockAds);
+    args.extraMeta = toBool(args.extraMeta);
     args.headless = toBool(args.headless);
     args.iframes = toBool(args.iframes);
     args.minify = toBool(args.minify);
@@ -79,7 +80,10 @@ async function internalRecordPage(args, page) {
         });
     }
 
-    const snapshot = { url: URI, base_url: '', canonical_url: '', html: '', responses: {} };
+    let snapshot = { url: URI, base_url: '', html: '', responses: {} };
+    if (args.extraMeta) {
+        snapshot = { url: URI, base_url: '', canonical_url: '', title: '', html: '', responses: {} };
+    }
 
     page.on('response', async (response) => {
         const r = response.request();
@@ -173,10 +177,16 @@ async function internalRecordPage(args, page) {
 
     // resolved base URL
     snapshot.base_url = await page.evaluate('document.baseURI');
-    // resolved canonical URL
-    snapshot.canonical_url = await page.evaluate(
-        `(document.querySelector("link[rel='canonical']") || document.createElement('link')).getAttribute('href')`,
-    );
+
+    if (args.extraMeta) {
+        snapshot.title = (await page.title()).trim();
+        // resolved canonical URL
+        snapshot.canonical_url = await page.evaluate(
+            `(document.querySelector("link[rel='canonical']") || document.createElement('link')).getAttribute('href')`,
+        );
+        if (!snapshot.canonical_url) delete snapshot.canonical_url;
+    }
+
     // delete possible index duplicates, when user URL != resolved URL
     let baseKey = `GET:${snapshot.base_url}`;
     if (snapshot.responses[baseKey] && snapshot.responses[baseKey].body) {

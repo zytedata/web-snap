@@ -19,6 +19,7 @@ const options = {
         offline: 'yes', // force browser offline
         timeout: 15, // navigation timeout
         wait: 120, // keep the browser open (seconds)
+        overwrite: null, // overwrite body HTML with HTML from snapshot
         removeElems: '', // remove page elements
     },
 };

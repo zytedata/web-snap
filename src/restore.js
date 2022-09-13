@@ -105,7 +105,7 @@ export async function restorePage(args) {
     await page.goto(record.base_url, { waitUntil: 'networkidle' });
 
     // overwrite page content with the one from the snapshot, to fix potential JS issues
-    if (args.js) {
+    if (args.overwrite && args.js) {
         console.log('REWRITE page content from snapshot..');
         page.setContent(record.html);
     }

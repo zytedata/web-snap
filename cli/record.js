@@ -25,6 +25,7 @@ const options = {
         gzip: null, // compress final JSON
         headless: null, // visible browser window
         blockAds: null, // enable AdBlocker?
+        extraMeta: null, // extract meta from HTML?
         iframes: null, // capture iframes?
         js: 'on', // disable JS execution and capturing
         minify: null, // min final HTML before save
@@ -54,12 +55,22 @@ const options = {
 
     page.on('close', async () => {
         if (args.minify) {
+            const s = snapshot.html.length;
             try {
                 snapshot.html = await minify(snapshot.html, {
+                    caseSensitive: true,
+                    collapseBooleanAttributes: true,
+                    collapseWhitespace: true,
+                    conservativeCollapse: true,
+                    continueOnParseError: true,
+                    quoteCharacter: "'",
                     removeAttributeQuotes: true,
+                    removeStyleLinkTypeAttributes: true,
                     sortAttributes: true,
                     sortClassName: true,
                 });
+                const p = (snapshot.html.length / s * 100).toFixed(2);
+                console.log(`Body HTML minified ${p}%`);
             } catch (err) {
                 console.error('Cannot minify HTML!', err);
             }
