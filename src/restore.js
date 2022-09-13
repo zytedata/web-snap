@@ -41,10 +41,18 @@ export async function restorePage(args) {
     const browser = await chromium.launch({
         headless: args.headless,
         args: [
-            '--disable-web-security',
-            '--disable-site-isolation-trials',
-            '--disable-features=IsolateOrigins',
             '--allow-running-insecure-content',
+            '--disable-background-networking',
+            '--disable-breakpad',
+            '--disable-crash-reporter',
+            '--disable-default-apps',
+            '--disable-demo-mode',
+            '--disable-extensions',
+            '--disable-features=IsolateOrigins',
+            '--disable-site-isolation-trials',
+            '--disable-speech-api',
+            '--disable-sync',
+            '--disable-web-security',
         ],
     });
 
@@ -66,7 +74,7 @@ export async function restorePage(args) {
     });
 
     page.setDefaultTimeout(args.timeout);
-    await page.route('**', async (route) => {
+    await context.route('**', async (route) => {
         const r = route.request();
         const u = normalizeURL(r.url());
 
@@ -81,7 +89,7 @@ export async function restorePage(args) {
 
         const key = requestKey(r);
         const cached = record.responses[key];
-        if (cached && cached.body) {
+        if (cached && cached.headers) {
             // ignore all javascript requests on restore, when JS disabled
             const contentType = cached.headers['content-type'];
             if (

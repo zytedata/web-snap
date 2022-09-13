@@ -79,9 +79,10 @@ The `snapshot.json` file format is simple:
 - url - is the URL specified when creating the snapshot
 - base_url - this is the resolved URL, after redirects (eg: may redirect to HTTPS and www.)
 - canonical_url - (optional) this is the canonical URL of the page
+- title - (optional) this is the title of the page
 - html - is the final, settled HTML of the page
 - responses - contains all the resources of the page (CSS, JS, images, etc) as key-value pairs:
-    - body - the resource body saved as Base64
+    - body - the resource body saved as Quopri or Base64
     - headers - a limited subset of the response headers
     - request_url - the initial resource URL
     - response_url - (optional) the final response URL, after redirects (if it's different than the request URL)

@@ -105,3 +105,4 @@ dist
 
 # Snapshot files
 snap*.json
+snap*.json.gz
