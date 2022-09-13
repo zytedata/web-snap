@@ -1,15 +1,14 @@
 import test from 'ava';
-import utf8 from 'utf8';
 import { encode, decode } from '../src/quopri.js';
 
 test('quopri test', async (t) => {
     t.is(decode(' =3D=20'), ' = ');
-    t.is(utf8.decode(decode('=E4=BD=A0=E5=A5=BD')), '你好');
     t.is(decode('foo\r\nbar='), 'foo\r\nbar');
+    t.is(decode('=E4=BD=A0=E5=A5=BD'), 'ä½ å¥½'); // 你好
     t.is(
-        utf8.decode(decode('I=C3=B1t=C3=ABrn=C3=A2ti=C3=B4n=C3=A0liz=C3=A6ti=C3=B8n=E2=98=83=F0=9F=92=\r\n=A9')),
-        'Iñtërnâtiônàlizætiøn☃💩',
-    );
+        decode('I=C3=B1t=C3=ABrn=C3=A2ti=C3=B4n=C3=A0liz=C3=A6ti=C3=B8n=E2=98=83=F0=9F=92=\r\n=A9'),
+        'IÃ±tÃ«rnÃ¢tiÃ´nÃ lizÃ¦tiÃ¸nâ\x98\x83ð\x9F\x92©',
+    ); // Iñtërnâtiônàlizætiøn☃💩
     t.is(
         decode('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxXYZ=20'),
         'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxXYZ ',
