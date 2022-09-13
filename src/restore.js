@@ -3,6 +3,7 @@
  */
 import { chromium } from 'playwright';
 
+import { decode } from './quopri.js';
 import { requestKey, normalizeURL, toBool, smartSplit, parseSnapshot } from './util.js';
 
 async function processArgs(args) {
@@ -17,6 +18,13 @@ async function processArgs(args) {
     if (snap) {
         args.RECORD = await parseSnapshot(snap);
     }
+}
+
+function decodeBody(body) {
+    if (!body || body.length === 0) return '';
+    if (body.startsWith('QUOPRI:')) return decode(body.slice(7));
+    if (body.startsWith('BASE64:')) return Buffer.from(body.slice(7), 'base64');
+    return Buffer.from(body, 'base64');
 }
 
 export async function restorePage(args) {
@@ -89,7 +97,7 @@ export async function restorePage(args) {
             console.log(`Restored from CACHE: ${key}`);
             route.fulfill({
                 contentType: contentType || '',
-                body: Buffer.from(cached.body, 'base64'),
+                body: decodeBody(cached.body),
                 status: record.status,
                 headers: cached.headers, // Some headers may be useful here
             });

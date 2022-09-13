@@ -8,6 +8,7 @@ import CleanCSS from 'clean-css';
 import { PurgeCSS } from 'purgecss';
 import { PlaywrightBlocker } from '@cliqz/adblocker-playwright';
 
+import { encode } from './quopri.js';
 import { requestKey, normalizeURL, toBool, smartSplit } from './util.js';
 
 async function processArgs(args) {
@@ -74,6 +75,27 @@ export async function recordPage(args) {
     return { snapshot, page, context, browser };
 }
 
+function encodeBody(resourceType, contentType, buffer) {
+    if (!buffer || buffer.length === 0) return '';
+    if (
+        resourceType === 'document' ||
+        resourceType === 'stylesheet' ||
+        resourceType === 'script' ||
+        resourceType === 'manifest'
+    ) {
+        return `QUOPRI:${encode(buffer)}`;
+    }
+    if (
+        contentType &&
+        (contentType.startsWith('text/') ||
+            contentType.startsWith('image/svg+xml') ||
+            contentType.startsWith('application/json'))
+    ) {
+        return `QUOPRI:${encode(buffer)}`;
+    }
+    return `BASE64:${buffer.toString('base64')}`;
+}
+
 async function internalRecordPage(args, page) {
     const { URI, DROP, DROPLI, HEADERS, REMOVE, CSS } = args;
 
@@ -127,27 +149,20 @@ async function internalRecordPage(args, page) {
         // restrict headers to subset
         let headers = Object.entries(response.headers()).filter(([key]) => HEADERS.includes(key));
         headers = Object.fromEntries(headers);
+        const contentType = headers['content-type'];
 
         let body;
         try {
             const buffer = await response.body();
-            body = buffer.toString('base64');
+            body = encodeBody(r.resourceType(), contentType, buffer);
         } catch (err) {
             const frame = page.frame({ url: u });
             if (frame && args.iframes) {
                 console.log('Capture IFRAME content for:', frame.url());
                 const content = (await frame.content()).trim();
-                body = new Buffer.from(content, 'binary').toString('base64');
+                body = encodeBody(r.resourceType(), contentType, new Buffer.from(content, 'utf-8'));
             } else if (status !== 204) {
                 console.error('ERR saving response for:', status, u, err);
-                // try {
-                //     response = await page.request.fetch(r, { ignoreHTTPSErrors: true, failOnStatusCode: true });
-                //     const buffer = await response.body();
-                //     body = buffer.toString('base64');
-                //     console.log('SUCCESS FETCH:', key);
-                // } catch (err) {
-                //     console.error('FETCH ERR', err);
-                // }
             }
         }
 

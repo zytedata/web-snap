@@ -76,6 +76,8 @@ def save_result():
         'google-analytics.com',
         'google.com/adsense/search',
         'google.com/recaptcha',
+        'googleads.g.doubleclick.net/pagead',
+        'googleoptimize.com',
         'gstatic.com/recaptcha/releases',
         # amazon
         'fls-na.amazon.com',

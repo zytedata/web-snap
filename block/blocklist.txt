@@ -74,6 +74,8 @@ fmpub.net
 google-analytics.com
 google.com/adsense/search
 google.com/recaptcha
+googleads.g.doubleclick.net/pagead
+googleoptimize.com
 googlesyndication.com
 googletagservices.com
 gstatic.com/recaptcha/releases
