@@ -1,6 +1,7 @@
 /*
  * Record a page.
  */
+import fs from 'fs';
 import fetch from 'cross-fetch';
 import playwright from 'playwright';
 import CleanCSS from 'clean-css';
@@ -9,7 +10,7 @@ import { PlaywrightBlocker } from '@cliqz/adblocker-playwright';
 
 import { requestKey, normalizeURL, toBool, smartSplit } from './util.js';
 
-function processArgs(args) {
+async function processArgs(args) {
     args.gzip = toBool(args.gzip);
     args.js = toBool(args.js);
     args.blockAds = toBool(args.blockAds);
@@ -28,6 +29,16 @@ function processArgs(args) {
     args.REMOVE = smartSplit(args.removeElems);
     args.CSS = args.addCSS ? args.addCSS.trim() : '';
 
+    if (args.blockList) {
+        const blockList = await fs.promises.readFile(args.blockList, { encoding: 'utf8' });
+        args.DROPLI = blockList
+            .split('\n')
+            .map((x) => x.trim().replace(/\/+$/, ''))
+            .filter((x) => x && !x.startsWith('#') && x.length > 5)
+            .map((x) => new RegExp(`^https?://(www\.)?${x}/.+`, 'i'));
+        console.log(`Loaded ${args.DROPLI.length} drop list domains from file`);
+    }
+
     args.URI = args._ ? args._[0] : null || args.input || args.url;
     let HOST = new URL(args.URI).host;
     if (HOST.startsWith('www.')) HOST = HOST.slice(4);
@@ -35,10 +46,11 @@ function processArgs(args) {
     if (!OUT) OUT = `snapshot_${HOST}.json`;
     if (args.gzip && !OUT.endsWith('.gz')) OUT += '.gz';
     args.OUT = OUT;
+    // console.log('ARGS:', args);
 }
 
 export async function recordPage(args) {
-    processArgs(args);
+    await processArgs(args);
 
     // only Chromium supported for now
     const browser = await playwright.chromium.launch({ headless: args.headless });
@@ -63,13 +75,14 @@ export async function recordPage(args) {
 }
 
 async function internalRecordPage(args, page) {
-    const { URI, DROP, HEADERS, REMOVE, CSS } = args;
+    const { URI, DROP, DROPLI, HEADERS, REMOVE, CSS } = args;
 
-    if (DROP && DROP.length) {
+    if ((DROP && DROP.length) || (DROPLI && DROPLI.length)) {
+        const block = [...DROP, ...DROPLI];
         page.route('**', async (route) => {
             const r = route.request();
             const u = normalizeURL(r.url());
-            for (const re of DROP) {
+            for (const re of block) {
                 if (re.test(u)) {
                     console.log('Drop matching request:', re, u);
                     route.abort();

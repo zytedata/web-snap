@@ -25,6 +25,7 @@ const options = {
         gzip: null, // compress final JSON
         headless: null, // visible browser window
         blockAds: null, // enable AdBlocker?
+        blockList: null, // block domains from custom list
         extraMeta: null, // extract meta from HTML?
         iframes: null, // capture iframes?
         js: 'on', // disable JS execution and capturing
