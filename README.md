@@ -61,7 +61,7 @@ And a last example, how to capture an Amazon page:
 ``` shell
 web-record https://www.amazon.com/dp/B086CV781H --gzip \
     --rm 'script #nav-main #mars-fs-wrapper #rhf #navFooter #navBackToTop' \
-    --drop '//fls-na.amazon.com/1 //unagi.amazon.com/1 //unagi-na.amazon.com/1 //cloudfront-labs.amazonaws.com/' \
+    --blockAds yes --blockList block/blocklist.txt --drop '//unagi.amazon.com/1' \
     --js off --minify --wait 10
 ```
 
@@ -69,7 +69,7 @@ web-record https://www.amazon.com/dp/B086CV781H --gzip \
 
 These options will reduce the Amazon snapshot from ~*21MB*, to *857K* (24x smaller), without losing any useful information.
 
-If you care about the snapshot size, you need to try different options depending on the domain, to see what works.
+If you care about the snapshot size, you need to try different options depending on the domain, to see what works, because some options will break the page on restore.
 
 
 ## File format

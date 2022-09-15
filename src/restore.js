@@ -36,7 +36,8 @@ export async function restorePage(args) {
         return;
     }
 
-    console.log('Restoring URL:', record.url);
+    const URL = normalizeURL(record.url || record.base_url);
+    console.log('Restoring URL:', URL);
 
     const browser = await chromium.launch({
         headless: args.headless,
@@ -78,7 +79,7 @@ export async function restorePage(args) {
         const r = route.request();
         const u = normalizeURL(r.url());
 
-        if (u === normalizeURL(record.url) || u === normalizeURL(record.base_url)) {
+        if (u === URL) {
             console.log(`Restored INDEX from CACHE: ${u}`);
             route.fulfill({
                 contentType: 'text/html; charset=utf-8',
@@ -118,7 +119,7 @@ export async function restorePage(args) {
     });
 
     // navigate to the resolved URL instead of the user provided one
-    await page.goto(record.base_url, { waitUntil: 'networkidle' });
+    await page.goto(record.base_url || record.url, { waitUntil: 'networkidle' });
 
     // overwrite page content with the one from the snapshot, to fix potential JS issues
     if (args.overwrite && args.js) {
