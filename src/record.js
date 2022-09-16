@@ -30,13 +30,14 @@ async function processArgs(args) {
     args.REMOVE = smartSplit(args.removeElems);
     args.CSS = args.addCSS ? args.addCSS.trim() : '';
 
+    args.DROPST = smartSplit(args.dropStatus).map((x) => new RegExp(x.replace(/x/ig, '\\d')));
     if (args.blockList) {
         const blockList = await fs.promises.readFile(args.blockList, { encoding: 'utf8' });
         args.DROPLI = blockList
             .split('\n')
             .map((x) => x.trim().replace(/\/+$/, ''))
             .filter((x) => x && !x.startsWith('#') && x.length > 5)
-            .map((x) => new RegExp(`^https?://(www\.)?${x}/.+`, 'i'));
+            .map((x) => new RegExp(`^https?://(www\.|m\.)?${x}/.+`, 'i'));
         console.log(`Loaded ${args.DROPLI.length} drop list domains from file`);
     }
 
@@ -97,7 +98,7 @@ function encodeBody(resourceType, contentType, buffer) {
 }
 
 async function internalRecordPage(args, page) {
-    const { URI, DROP, DROPLI, HEADERS, REMOVE, CSS } = args;
+    const { URI, DROP, DROPLI, DROPST, HEADERS, REMOVE, CSS } = args;
 
     if ((DROP && DROP.length) || (DROPLI && DROPLI.length)) {
         const block = [...DROP, ...DROPLI];
@@ -106,7 +107,7 @@ async function internalRecordPage(args, page) {
             const u = normalizeURL(r.url());
             for (const re of block) {
                 if (re.test(u)) {
-                    console.log('Drop matching request:', re, u);
+                    console.warn('Drop matching request:', re, u);
                     route.abort();
                     return;
                 }
@@ -128,21 +129,24 @@ async function internalRecordPage(args, page) {
         }
         // ignore the index page, it will be saved at the end
         if (u === normalizeURL(URI)) return;
+
         const status = response.status();
-        // ignore redirect requests, they will be saved after resolved
-        if (status >= 300 && status < 400) {
-            console.log('Redirect from:', u, 'to:', response.headers()['location']);
-            return;
-        } else if (status >= 500) {
-            // don't save server error responses
-            console.error('Remote server error', status, u);
-            return;
+        if (DROPST && DROPST.length) {
+            for (const re of DROPST) {
+                if (re.test(status.toString())) {
+                    console.warn('Drop matching status:', re, status);
+                    return;
+                }
+            }
+        } else {
+            // ignore redirect requests, they will be saved after resolved
+            if (status >= 300 && status < 400) {
+                console.warn('Redirect from:', u, 'to:', response.headers()['location']);
+                return;
+            }
+            // allow all the other statuses
         }
-        // else if (status >= 400 && status < 500) {
-        //     // should we save client error responses?
-        //     console.error('Ignoring client error', status, u);
-        //     return;
-        // }
+
         const key = requestKey(r);
         console.log('Response:', status, key);
 
