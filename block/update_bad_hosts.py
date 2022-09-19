@@ -9,14 +9,26 @@ import requests
 def upd_easylist():
     name = 'EASYLIST'
     URL = 'https://v.firebog.net/hosts/Easylist.txt'
+    # https://easylist.to/easylist/easylist.txt
+    hosts = set()
     r = requests.get(URL)
     print(r, URL)
-    hosts = set()
-    for line in r.text.split('\n')[3:]:
+    for line in r.text.split('\n')[5:]:
         line = line.strip()
-        if not line or line[0] == '#':
+        if not line or line[0] == '#' or len(line) < 4:
             continue
         hosts.add(line.strip())
+
+    URL = 'https://v.firebog.net/hosts/Easyprivacy.txt'
+    # https://easylist.to/easylist/easyprivacy.txt
+    r = requests.get(URL)
+    print(r, URL)
+    for line in r.text.split('\n')[5:]:
+        line = line.strip()
+        if not line or line[0] == '#' or len(line) < 4:
+            continue
+        hosts.add(line.strip())
+
     print(f'{name} found hosts: {len(hosts)}')
     return name, hosts
 
@@ -94,13 +106,12 @@ def save_result():
     _, disco = upd_disconnect()
     _, w3kbl = upd_w3kbl()
 
-    hosts = CUSTOM | (adaway & w3kbl) | (adaway & easy) | (easy & w3kbl) | (w3kbl & disco)
+    hosts = CUSTOM | (adaway & w3kbl) | (adaway & easy) | (easy & w3kbl) | (easy & disco) | (w3kbl & disco)
     with open(OUTPUT, 'w') as fd:
         fd.write('# Generated from update_bad_hosts.py\n')
         for x in sorted(hosts):
             if len(x) < 5: continue
             fd.write(f'{x}\n')
-        fd.write('\n')
     print(f'Written {len(hosts)} hosts in {OUTPUT}')
 
 
