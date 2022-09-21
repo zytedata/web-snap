@@ -8,8 +8,7 @@ import CleanCSS from 'clean-css';
 import { PurgeCSS } from 'purgecss';
 import { PlaywrightBlocker } from '@cliqz/adblocker-playwright';
 
-import { encode } from './quopri.js';
-import { requestKey, normalizeURL, toBool, smartSplit } from './util.js';
+import { requestKey, normalizeURL, toBool, smartSplit, encodeBody } from './util.js';
 
 async function processArgs(args) {
     args.gzip = toBool(args.gzip);
@@ -74,27 +73,6 @@ export async function recordPage(args) {
     const snapshot = await internalRecordPage(args, page);
 
     return { snapshot, page, context, browser };
-}
-
-function encodeBody(resourceType, contentType, buffer) {
-    if (!buffer || buffer.length === 0) return '';
-    if (
-        resourceType === 'document' ||
-        resourceType === 'stylesheet' ||
-        resourceType === 'script' ||
-        resourceType === 'manifest'
-    ) {
-        return `QUOPRI:${encode(buffer)}`;
-    }
-    if (
-        contentType &&
-        (contentType.startsWith('text/') ||
-            contentType.startsWith('image/svg+xml') ||
-            contentType.startsWith('application/json'))
-    ) {
-        return `QUOPRI:${encode(buffer)}`;
-    }
-    return `BASE64:${buffer.toString('base64')}`;
 }
 
 async function internalRecordPage(args, page) {

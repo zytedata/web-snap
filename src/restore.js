@@ -3,8 +3,7 @@
  */
 import { chromium } from 'playwright';
 
-import { decode } from './quopri.js';
-import { requestKey, normalizeURL, toBool, smartSplit, parseSnapshot } from './util.js';
+import { requestKey, normalizeURL, toBool, smartSplit, parseSnapshot, decodeBody } from './util.js';
 
 async function processArgs(args) {
     args.js = toBool(args.js);
@@ -18,13 +17,6 @@ async function processArgs(args) {
     if (snap) {
         args.RECORD = await parseSnapshot(snap);
     }
-}
-
-function decodeBody(body) {
-    if (!body || body.length === 0) return '';
-    if (body.startsWith('QUOPRI:')) return decode(body.slice(7));
-    if (body.startsWith('BASE64:')) return Buffer.from(body.slice(7), 'base64');
-    return Buffer.from(body, 'base64');
 }
 
 export async function restorePage(args) {
@@ -90,7 +82,7 @@ export async function restorePage(args) {
 
         const key = requestKey(r);
         const cached = record.responses[key];
-        if (cached && cached.headers) {
+        if (cached && cached.status) {
             // ignore all javascript requests on restore, when JS disabled
             const contentType = cached.headers['content-type'];
             if (
