@@ -24,7 +24,11 @@ export async function restorePage(args) {
     const record = args.RECORD;
 
     if (!record) {
-        console.error(`Empty snapshot file! Cannot launch!`);
+        console.error('Empty snapshot file! Cannot launch!');
+        return;
+    }
+    if (!((record.url || record.base_url) && record.html && record.responses)) {
+        console.error('Invalid snapshot file! Cannot launch!');
         return;
     }
 
@@ -87,6 +91,7 @@ export async function restorePage(args) {
             const contentType = cached.headers['content-type'];
             if (
                 !args.js &&
+                contentType &&
                 (contentType.startsWith('text/javascript') ||
                     contentType.startsWith('application/javascript') ||
                     contentType.startsWith('application/x-javascript'))

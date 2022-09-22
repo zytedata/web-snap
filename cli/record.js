@@ -87,6 +87,7 @@ const options = {
         process.exit();
     });
 
+    console.log(`Waiting ${args.wait / 1000} sec...`);
     await delay(args.wait);
     await browser.close();
 })();
