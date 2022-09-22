@@ -96,7 +96,15 @@ async function internalRecordPage(args, page) {
 
     let snapshot = { url: URI, base_url: '', html: '', responses: {} };
     if (args.extraMeta) {
-        snapshot = { url: URI, base_url: '', canonical_url: '', title: '', html: '', responses: {} };
+        snapshot = {
+            url: URI,
+            base_url: '',
+            canonical_url: '',
+            date: new Date().toISOString(),
+            title: '',
+            html: '',
+            responses: {},
+        };
     }
 
     page.on('response', async (response) => {
