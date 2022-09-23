@@ -32,7 +32,7 @@ export async function restorePage(args) {
         return;
     }
 
-    const URL = normalizeURL(record.url || record.base_url);
+    const URL = normalizeURL(record.base_url || record.url);
     console.log('Restoring URL:', URL);
 
     const browser = await chromium.launch({
@@ -116,7 +116,11 @@ export async function restorePage(args) {
     });
 
     // navigate to the resolved URL instead of the user provided one
-    await page.goto(record.base_url || record.url, { waitUntil: 'networkidle' });
+    try {
+        await page.goto(URL, { waitUntil: 'networkidle' });
+    } catch (err) {
+        console.error('Page timeout:', err);
+    }
 
     // overwrite page content with the one from the snapshot, to fix potential JS issues
     if (args.overwrite && args.js) {
