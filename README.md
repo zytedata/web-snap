@@ -1,6 +1,103 @@
 # Web-snaphots
 
 Create "perfect" snapshots of web pages.
+Take Webpage Screenshot with Python Selenium
+Screenshots of webpages can be taken automatically with Python Selenium Web Driver. First load the selenium module and time module. You need the time module to wait for page loading to complete.
+Then once the page is loaded, take the screenshot. This can be a PNG file or another image format. Then close the web browser, otherwise it will stay open indefinitely.
+![image](https://user-images.githubusercontent.com/108294627/197177992-2670f249-be0c-4a5d-82e1-a07eb8c62c73.png)
+
+Taking Screenshots With Python
+To follow along with this tutorial, you’ll need to have Python 3 installed. This tutorial uses Python v3.9.12.
+All of the code used in this tutorial is available in this GitHub repository.
+Setting Up the Project
+Open up your terminal, navigate to a path of your choice, and run the following commands to create the project’s directory:
+mkdir python-web-screenshots
+cd python-web-screenshots
+Create a virtual environment for the Python project by running the following command in your terminal:
+python3 -m venv venv
+Activate the virtual environment by running the following command in your terminal:
+source venv/bin/activate
+That’s it—the project directory is set up and ready to go. Next, you’ll learn to take screenshots of web pages using different Python packages.
+Using Selenium
+Install Selenium and a web driver manager by running the following command in your terminal:
+pip install selenium webdriver-manager
+Create a main.py file and add the following code to it:
+# 1
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+ 
+# 2
+driver = webdriver.Chrome(ChromeDriverManager().install())
+ 
+# 3
+driver.get('https://www.urlbox.io')
+ 
+# 4
+driver.save_screenshot('screenshot.png')
+ 
+# 5
+driver.quit()
+The steps in the above code do the following:
+•	One: Imports the required packages. For this tutorial, you'll import the Chrome driver (ChromeDriverManager), but you can use the driver of your choice.
+•	Two: Creates a driver instance (driver) for the Chrome web browser.
+•	Three: Fetches (driver.get) the page specified in the URL so you can take a screenshot of it.
+•	Four: Saves the fetched response as the screenshot (driver.save_screenshot).
+•	Five: Closes (driver.quit) the driver and exits the program.
+You can execute the Python script above by running the following command in your terminal:
+python main.py
+Here’s what a screenshot of a blog looks like with this method:
+ 
+You can see that the screenshot was taken while the page was still loading—the empty space on the right side is supposed to contain a block of content. You can go to the original page to see for yourself what it should have looked like.
+In addition to the possibility that the screenshot will be captured before the website is ready, you need to manually configure the width and height of the screenshot window to capture the full window. In most cases, this will result in odd scroll bars in screenshots taken with this method. Also, the cookies banner at the bottom of the page is blocking some content.
+Using Selenium Headlessly
+The approach above is only possible when you have access to a GUI. In some cases, like when you're using CI/CD tools, that approach won't work. To get around this limitation, you can use the headless approach to take screenshots of websites.
+To do so, update the main.py file by adding the following code to it:
+# 1
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+ 
+# 2
+options = Options()
+options.headless = True
+ 
+# 3
+driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+ 
+# 4
+driver.get('https://www.urlbox.io')
+driver.save_screenshot('screenshot.png')
+ 
+# 5
+driver.quit()
+Again, looking at the code step by step, it does the following:
+•	One: Imports the required packages.
+•	Two: Creates an Options instance and set the headless parameter to True.
+•	Three: Creates a driver instance (driver) for the Chrome Web browser.
+•	Four:* Fetches (driver.get) the webpage you want to take the screenshot off of by providing its URL and save the fetched response as the screenshot (driver.save_screenshot).
+•	Five: Closes (driver.quit) the driver and exits the program.
+Execute the above Python script by running the following command in your terminal:
+python main.py
+Here’s how a screenshot of the same page from earlier looks:
+ 
+This method automatically captured the webpage in mobile view, and doesn't do anything about the cookies banner at the bottom. However, it doesn't require spinning up a Chromium instance just for taking screenshots, and the result is better than the previous method.
+Using IMGKit
+IMGKit is a Python wrapper for the wkhtmltoimage utility, which is used to convert HTML to IMG using Webkit.
+Install IMGKit and wkhtmltoimage by running the following commands in your terminal:
+pip install imgkit
+brew install wkhtmltoimage
+Update the main.py file by adding the following code to it:
+# 1
+import imgkit
+ 
+# 2
+imgkit.from_url('https://youtube.com', 'youtube.png')
+In the above code:
+•	One: Imports the imgkit package.
+•	Two: Downloads the specified URL, and saves the images using the from_url method from imgkit.
+Execute the above Python script by running the following command in your terminal:
+python main.py
+![image](https://user-images.githubusercontent.com/108294627/197178567-6eae4e46-09e3-4a6b-800b-61205327a61e.png)
 
 
 ## Install
