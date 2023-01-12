@@ -30,6 +30,7 @@ const options = {
         iframes: null, // capture iframes?
         js: 'on', // disable JS execution and capturing
         minify: null, // min final HTML before save
+        minCSS: null, // min final CSS before save
         purgeCSS: null, // purge unused CSS and generate 1 single CSS file
         timeout: 15, // navigation timeout
         imgTimeout: 15,
@@ -57,7 +58,7 @@ const options = {
 
     page.on('close', async () => {
         if (args.minify) {
-            const s = snapshot.html.length;
+            const s1 = snapshot.html.length;
             try {
                 snapshot.html = await minify(snapshot.html, {
                     caseSensitive: true,
@@ -71,8 +72,8 @@ const options = {
                     sortAttributes: true,
                     sortClassName: true,
                 });
-                const p = (snapshot.html.length / s * 100).toFixed(2);
-                console.log(`Body HTML minified ${p}%`);
+                const s2 = snapshot.html.length;
+                console.log(`Body HTML minified to ${(s2/s1 * 100).toFixed(2)}% from ${s1} to ${s2}`);
             } catch (err) {
                 console.error('Cannot minify HTML!', err);
             }
