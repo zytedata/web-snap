@@ -58,7 +58,7 @@ const options = {
 
     page.on('close', async () => {
         if (args.minify) {
-            const s1 = snapshot.html.length;
+            const s1 = Intl.NumberFormat('en').format(snapshot.html.length);
             try {
                 snapshot.html = await minify(snapshot.html, {
                     caseSensitive: true,
@@ -72,7 +72,7 @@ const options = {
                     sortAttributes: true,
                     sortClassName: true,
                 });
-                const s2 = snapshot.html.length;
+                const s2 = Intl.NumberFormat('en').format(snapshot.html.length);
                 console.log(`Body HTML minified to ${(s2/s1 * 100).toFixed(2)}% from ${s1} to ${s2}`);
             } catch (err) {
                 console.error('Cannot minify HTML!', err);
