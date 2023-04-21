@@ -5,6 +5,7 @@
 3p-udc.yahoo.com
 600z.com
 777seo.com
+a-ads.com
 a-reporting.nytimes.com
 a.mobify.com
 a.ucoz.net
@@ -46,8 +47,8 @@ ads-api.twitter.com
 ads-twitter.com
 ads.rd.linksynergy.com
 ads.samsung.com
+ads.saymedia.com
 ads.servebom.com
-ads.yahoo.com
 ads3-adnow.com
 ads5-adnow.com
 adsafeprotected.com
@@ -92,6 +93,7 @@ als-svc.nytimes.com
 altitude-arena.com
 am-vid-events.taboola.com
 am15.net
+amazon-adsystem.com
 amp-error-reporting.appspot.com
 amp.rd.linksynergy.com
 amplifypixel.outbrain.com
@@ -100,11 +102,13 @@ analytics-static.ugc.bazaarvoice.com
 analytics.163.com
 analytics.carambo.la
 analytics.chase.com
+analytics.edgekey.net
 analytics.ff.avast.com
 analytics.foresee.com
 analytics.getshogun.com
 analytics.kaltura.com
 analytics.kidoz.net
+analytics.kongregate.io
 analytics.live.com
 analytics.logsss.com
 analytics.mailmunch.co
@@ -167,6 +171,7 @@ bimlocal.com
 blogherads.com
 blueadvertise.com
 bluekai.com
+boomads.com
 bootstrap.upsight-api.com
 brainient.com
 brandreachsys.com
@@ -206,7 +211,6 @@ collect.banggood.com
 collect.igodigital.com
 collector.cint.com
 collector.xhamster.com
-comclick.com
 connextra.com
 content.tapjoy.com
 contentabc.com
@@ -242,6 +246,7 @@ directleads.com
 directorym.com
 directtrack.com
 domdex.com
+doubleclick.com
 doubleclick.net
 doublepimp.com
 dpmsrv.com
@@ -343,6 +348,7 @@ la-sync.taboola.com
 lakequincy.com
 lciapi.ninthdecimal.com
 leadbolt.net
+leadzupc.com
 lfstmedia.com
 lgsmartad.com
 liftdna.com
@@ -392,6 +398,7 @@ metrics.fedex.com
 metrics.icloud.com
 metrics.kmsmep.com
 metrics.roblox.com
+metrics.ted.com
 metrics.timewarnercable.com
 micpn.com
 microad.net
@@ -413,6 +420,7 @@ mxtads.com
 mythings.com
 nappyattack.com
 neocounter.neoworx-blog-tools.net
+nervoussummer.com
 nexus.ensighten.com
 nmcdn.us
 nr-events.taboola.com
@@ -471,11 +479,9 @@ prd-collector-anon.ex.co
 predictad.com
 prg.smartadserver.com
 primaryads.com
-pro-advertising.com
 projectwonderful.com
 promobenef.com
 promos.fling.com
-promote.pair.com
 propellerads.com
 psa.carambo.la
 pt.ispot.tv
@@ -595,6 +601,7 @@ trace.qq.com
 track.dictionary.com
 track.pricespider.com
 track.recreativ.ru
+track.tappx.com
 track.tiara.daum.net
 track.uc.cn
 tracker.icerocket.com
@@ -605,6 +612,7 @@ tracking.lengow.com
 tracking.lg.com
 tracking.listhub.net
 tracking.miui.com
+traxex.gannettdigital.com
 trc.pushnami.com
 tredir.go.com
 tremorhub.com

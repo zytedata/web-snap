@@ -3,6 +3,7 @@ import fs from 'fs';
 import { gzip } from 'zlib';
 import { promisify } from 'util';
 import { minify } from 'html-minifier-terser';
+import prettyBytes from 'pretty-bytes';
 import mri from 'mri';
 
 import pkg from '../package.json' assert { type: 'json' };
@@ -73,9 +74,11 @@ const options = {
                     sortClassName: true,
                 });
                 const s2 = snapshot.html.length;
+                const s3 = prettyBytes(s2, { maximumFractionDigits: 2 });
                 console.log(
-                    `Body HTML minified to ${((s2 / s1) * 100).toFixed(2)}% from ` +
-                        `${Intl.NumberFormat('en').format(s1)} to ${Intl.NumberFormat('en').format(s2)}`,
+                    `Body HTML minify efficiency ${((s2 / s1) * 100).toFixed(2)}% from ` +
+                        `${Intl.NumberFormat('en').format(s1)} to ${Intl.NumberFormat('en').format(s2)} ` +
+                        `(${s3})`,
                 );
             } catch (err) {
                 console.error('Cannot minify HTML!', err);
