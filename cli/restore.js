@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import mri from 'mri';
 
-import pkg from '../package.json' assert { type: 'json' };
+import pkg from '../package.json' with { type: 'json' };
 import { restorePage } from '../src/restore.js';
 import { delay } from '../src/util.js';
 

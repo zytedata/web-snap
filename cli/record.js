@@ -6,7 +6,7 @@ import { minify } from 'html-minifier-terser';
 import prettyBytes from 'pretty-bytes';
 import mri from 'mri';
 
-import pkg from '../package.json' assert { type: 'json' };
+import pkg from '../package.json' with { type: 'json' };
 import { recordPage } from '../src/record.js';
 import { delay } from '../src/util.js';
 

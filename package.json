@@ -3,18 +3,18 @@
     "Cristi Constantin <cristi.constantin@live.com>"
   ],
   "dependencies": {
-    "@cliqz/adblocker-playwright": "1.26.5",
-    "clean-css": "5.3.2",
-    "cross-fetch": "3.1.5",
+    "@cliqz/adblocker-playwright": "1.27.11",
+    "clean-css": "5.3.3",
+    "cross-fetch": "4.0.0",
     "html-minifier-terser": "7.2.0",
     "mri": "1.2.0",
     "playwright": "1.32.3",
-    "pretty-bytes": "6.1.0",
+    "pretty-bytes": "6.1.1",
     "purgecss": "5.0.0"
   },
   "devDependencies": {
     "ava": "5.1.0",
-    "express": "4.18.2"
+    "express": "4.19.2"
   },
   "main": "src",
   "type": "module",
