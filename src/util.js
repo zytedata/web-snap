@@ -64,7 +64,8 @@ export function encodeBody(resourceType, contentType, buffer) {
     ) {
         return `QUOPRI:${encode(buffer)}`;
     }
-    if (contentType &&
+    if (
+        contentType &&
         (contentType.startsWith('text/') ||
             contentType.startsWith('image/svg+xml') ||
             contentType.startsWith('application/json'))

@@ -50,7 +50,10 @@ export function encode(buffer) {
         // if the char is in allowed range, then keep as is, unless it is a ws in the end of a line
         if (
             checkRanges(ord, ranges) &&
-            !((ord === 0x20 || ord === 0x09) && (i === len - 1 || buffer[i + 1] === 0x0a || buffer[i + 1] === 0x0d))
+            !(
+                (ord === 0x20 || ord === 0x09) &&
+                (i === len - 1 || buffer[i + 1] === 0x0a || buffer[i + 1] === 0x0d)
+            )
         ) {
             result += String.fromCharCode(ord);
             continue;

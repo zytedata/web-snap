@@ -5,7 +5,6 @@ import fs from 'fs';
 import fetch from 'cross-fetch';
 import playwright from 'playwright';
 import CleanCSS from 'clean-css';
-import { PurgeCSS } from 'purgecss';
 import { PlaywrightBlocker } from '@cliqz/adblocker-playwright';
 
 import { requestKey, normalizeURL, toBool, smartSplit, encodeBody } from './util.js';
@@ -18,7 +17,8 @@ async function processArgs(args) {
     args.headless = toBool(args.headless);
     args.iframes = toBool(args.iframes);
     args.minify = toBool(args.minify);
-    args.purgeCSS = toBool(args.purgeCSS);
+    args.minCSS = toBool(args.minCSS);
+    args.console = toBool(args.console);
 
     args.wait = parseInt(args.wait) * 1000;
     args.timeout = parseInt(args.timeout) * 1000;
@@ -29,7 +29,7 @@ async function processArgs(args) {
     args.REMOVE = smartSplit(args.removeElems);
     args.CSS = args.addCSS ? args.addCSS.trim() : '';
 
-    args.DROPST = smartSplit(args.dropStatus).map((x) => new RegExp(x.replace(/x/ig, '\\d')));
+    args.DROPST = smartSplit(args.dropStatus).map((x) => new RegExp(x.replace(/x/gi, '\\d')));
     if (args.blockList) {
         const blockList = await fs.promises.readFile(args.blockList, { encoding: 'utf8' });
         args.DROPLI = blockList
@@ -54,7 +54,12 @@ export async function recordPage(args) {
     await processArgs(args);
 
     // only Chromium supported for now
-    const browser = await playwright.chromium.launch({ headless: args.headless });
+    const browser = await playwright.chromium.launch({
+        headless: args.headless,
+        // disable-web-security is needed to access cross-origin resources,
+        // eg: CSS rules
+        args: ['--disable-default-apps', '--disable-web-security'],
+    });
     const context = await browser.newContext({
         javaScriptEnabled: args.js,
         userAgent: args.userAgent,
@@ -64,6 +69,14 @@ export async function recordPage(args) {
         viewport: null,
     });
     const page = await context.newPage();
+
+    if (args.console) {
+        page.on('console', async (msg) => {
+            const msgArgs = msg.args();
+            const logValues = await Promise.all(msgArgs.map(async (arg) => await arg.jsonValue()));
+            console.log(`CONSOLE.${msg.type().toUpperCase()}:`, ...logValues);
+        });
+    }
 
     if (args.blockAds) {
         const blocker = await PlaywrightBlocker.fromPrebuiltAdsAndTracking(fetch);
@@ -127,7 +140,7 @@ async function internalRecordPage(args, page) {
         } else {
             // ignore redirect requests, they will be saved after resolved
             if (status >= 300 && status < 400) {
-                console.warn('Redirect from:', u, 'to:', response.headers()['location']);
+                console.warn(`Redirect status: ${status}`, u, 'to:', response.headers()['location']);
                 return;
             }
             // allow all the other statuses
@@ -240,53 +253,9 @@ async function internalRecordPage(args, page) {
     // second snapshot
     snapshot.html = (await page.content()).trim();
 
-    if (args.purgeCSS) {
-        console.log('Purging unused CSS...');
-        const pageCSS = await page.evaluate(() => {
-            const css = [];
-            for (const style of document.styleSheets) {
-                let raw;
-                try {
-                    raw = Array.from(style.cssRules).map((r) => r.cssText).join(' ');
-                } catch (err) {
-                    console.error('Cannot access CSS:', err);
-                }
-                if (raw) css.push({ raw });
-            }
-            return css;
-        });
-        const purgedCSS = await new PurgeCSS().purge({
-            css: pageCSS,
-            content: [{ raw: snapshot.html, extension: 'html' }],
-        });
-        const joinedCSS = purgedCSS.map(({ css }) => css.trim()).join('\n');
-        const finalCSS = new CleanCSS({ mergeAdjacentRules: true }).minify(joinedCSS);
-        console.log('Stats:', finalCSS.stats);
-
-        console.log('Replacing existing CSS...');
-        await page.evaluate(() => {
-            for (const c of document.querySelectorAll('style')) {
-                c.parentNode.removeChild(c);
-            }
-        });
-        await page.evaluate((css) => {
-            const cssHack = document.createElement('style');
-            cssHack.className = 'purge';
-            cssHack.innerText = css;
-            document.head.appendChild(cssHack);
-        }, finalCSS.styles);
-
-        // final snapshot
-        snapshot.html = (await page.content()).trim();
-        // remove obsolete CSS resources
-        for (const k of Object.keys(snapshot.responses)) {
-            const res = snapshot.responses[k];
-            if (res.headers['content-type'] && res.headers['content-type'].startsWith('text/css')) {
-                console.log('Purging CSS response:', k);
-                res.body = null;
-                delete snapshot.responses[k];
-            }
-        }
+    if (args.minCSS) {
+        // TODO ...
+        // ...
     }
 
     return snapshot;

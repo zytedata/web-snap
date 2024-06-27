@@ -32,7 +32,6 @@ const options = {
         js: 'on', // disable JS execution and capturing
         minify: null, // min final HTML before save
         minCSS: null, // min final CSS before save
-        purgeCSS: null, // purge unused CSS and generate 1 single CSS file
         timeout: 15, // navigation timeout
         imgTimeout: 15,
         wait: 5, // wait for user interaction (seconds)
@@ -44,6 +43,7 @@ const options = {
         dropStatus: '', // drop matching statuses
         removeElems: '', // remove page elements
         addCSS: '', // add extra CSS
+        console: null, // print browser's console msgs
     },
 };
 
