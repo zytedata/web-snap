@@ -33,8 +33,8 @@ const options = {
     }
 
     const { page, browser } = await restorePage(args);
-    page.on('close', process.exit);
-    browser.on('disconnected', process.exit);
+    page.on('close', () => process.exit());
+    browser.on('disconnected', () => process.exit());
 
     await delay(args.wait);
     await browser.close();

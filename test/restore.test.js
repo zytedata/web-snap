@@ -2,7 +2,12 @@ import test from 'ava';
 import { restorePage } from '../src/restore.js';
 
 test('basic restore page', async (t) => {
-    const RECORD = { url: 'http://example.com', base_url: 'http://example.com/', html: 'Example page', responses: {} };
+    const RECORD = {
+        url: 'http://example.com',
+        base_url: 'http://example.com/',
+        html: 'Example page',
+        responses: {},
+    };
     const { page, browser } = await restorePage({ RECORD, timeout: 1, wait: 1, headless: true });
 
     const url = page.url();

@@ -4,7 +4,8 @@
 import fs from 'fs';
 import fetch from 'cross-fetch';
 import playwright from 'playwright';
-import CleanCSS from 'clean-css';
+import { transform as minifyCSS } from 'lightningcss';
+import { PurgeCSS } from 'purgecss';
 import { PlaywrightBlocker } from '@cliqz/adblocker-playwright';
 
 import { requestKey, normalizeURL, toBool, smartSplit, encodeBody } from './util.js';
@@ -18,6 +19,7 @@ async function processArgs(args) {
     args.iframes = toBool(args.iframes);
     args.minify = toBool(args.minify);
     args.minCSS = toBool(args.minCSS);
+    args.purgeCSS = toBool(args.purgeCSS);
     args.console = toBool(args.console);
 
     args.wait = parseInt(args.wait) * 1000;
@@ -253,9 +255,104 @@ async function internalRecordPage(args, page) {
     // second snapshot
     snapshot.html = (await page.content()).trim();
 
-    if (args.minCSS) {
-        // TODO ...
-        // ...
+    if (args.minCSS || args.purgeCSS) {
+        const [rawCSS, URLs] = await page.evaluate(() => {
+            const urls = new Set();
+            const css = [];
+            console.log(`Collecting ${document.styleSheets.length} CSS styleSheets...`);
+            // cycle #1 collect CSS
+            for (const style of document.styleSheets) {
+                if (style.href) urls.add(style.href);
+                let raw;
+                try {
+                    console.log(`Saving CSS rules for: ${style.ownerNode.localName} href=${style.href}`);
+                    raw = ` /* CSS for ${style.ownerNode.localName} href=${style.href} */ `;
+                    raw += Array.from(style.cssRules)
+                        .map((rule) => {
+                            if (rule.href) urls.add(rule.href);
+                            if (rule instanceof CSSImportRule) return '';
+                            return rule.cssText;
+                        })
+                        .join(' ');
+                } catch (err) {
+                    console.warn(`Cannot access CSS: ${err}`);
+                }
+                if (raw) css.push(raw);
+            }
+            console.log(`Found ${css.length} CSS styleSheets...`);
+            return [css, [...urls]];
+        });
+
+        let pageCSS = rawCSS.reduce((acc, curr) => acc + ' ' + curr, ' ');
+        const s1 = pageCSS.length;
+
+        if (args.purgeCSS) {
+            const purgedCSS = await new PurgeCSS().purge({
+                css: [{ raw: pageCSS }],
+                content: [{ raw: snapshot.html, extension: 'html' }],
+            });
+            pageCSS = purgedCSS.map(({ css }) => css).join(' ');
+        }
+
+        let finalCSS = '';
+        try {
+            finalCSS = minifyCSS({
+                code: Buffer.from(pageCSS),
+                minify: true,
+            }).code.toString();
+            const s2 = finalCSS.length;
+
+            console.log(
+                `CSS styles minify efficiency ${((s2 / s1) * 100).toFixed(2)}% from ` +
+                    `${Intl.NumberFormat('en').format(s1)} to ${Intl.NumberFormat('en').format(s2)}.`,
+            );
+        } catch (err) {
+            finalCSS = pageCSS;
+            console.error(`Minify CSS failed with error: ${err}!`);
+        }
+
+        await page.evaluate((css) => {
+            // cycle to remove CSS DOM nodes
+            // this needs to run after collecting the CSS
+            // and has to run a few times to remove all deep nodes ...
+            while (document.styleSheets.length > 0) {
+                for (const style of document.styleSheets) {
+                    try {
+                        console.warn(`Removing node: ${style.ownerNode}`);
+                        style.ownerNode.remove();
+                    } catch {}
+                }
+            }
+            const cssHack = document.createElement('style');
+            cssHack.className = 'clean';
+            cssHack.innerText = css;
+            document.head.appendChild(cssHack);
+        }, finalCSS);
+
+        // cleanup the recorded CSS resources
+        for (const u of URLs) {
+            const key = `GET:${u}`;
+            const res = snapshot.responses[key];
+            if (res) {
+                console.log('Removing recorded CSS response:', key);
+                res.body = null;
+                delete snapshot.responses[key];
+            }
+        }
+        // check if there are any CSS resources left
+        for (const k of Object.keys(snapshot.responses)) {
+            const res = snapshot.responses[k];
+            if (
+                res.headers &&
+                res.headers['content-type'] &&
+                res.headers['content-type'].startsWith('text/css')
+            ) {
+                console.log('CSS response not removed:', k);
+            }
+        }
+
+        // post CSS snapshot
+        snapshot.html = (await page.content()).trim();
     }
 
     return snapshot;

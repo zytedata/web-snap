@@ -21,7 +21,12 @@ test('basic record page', async (t) => {
     });
     server.listen(PORT);
 
-    const { snapshot, browser } = await recordPage({ url: server.url, timeout: 3, imgTimeout: 3, headless: true });
+    const { snapshot, browser } = await recordPage({
+        url: server.url,
+        timeout: 3,
+        imgTimeout: 3,
+        headless: true,
+    });
     t.is(snapshot.url, server.url);
     t.is(snapshot.base_url, server.url + '/');
     t.true(snapshot.html.includes('<body>Hello world</body>'));
