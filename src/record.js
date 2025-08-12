@@ -6,7 +6,7 @@ import fetch from 'cross-fetch';
 import playwright from 'playwright';
 import { transform as minifyCSS } from 'lightningcss';
 import { PurgeCSS } from 'purgecss';
-import { PlaywrightBlocker } from '@cliqz/adblocker-playwright';
+import { PlaywrightBlocker } from '@ghostery/adblocker-playwright';
 
 import { requestKey, normalizeURL, toBool, smartSplit, encodeBody } from './util.js';
 
