@@ -13,8 +13,8 @@
     "purgecss": "7.0.2"
   },
   "devDependencies": {
-    "ava": "5.1.0",
-    "express": "5.1.0"
+    "ava": "6.4.1",
+    "express": "5.2.1"
   },
   "main": "src",
   "type": "module",
