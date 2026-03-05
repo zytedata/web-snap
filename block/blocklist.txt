@@ -30,7 +30,6 @@ adcash.com
 adcloud.net
 ade.googlesyndication.com
 adform.net
-adgardener.com
 adlc-exchange.toast.com
 adlog.com.com
 admedo.com
@@ -72,7 +71,6 @@ adtng.com
 adtoma.com
 adtrace.org
 adtrue.com
-advertica-cdn.com
 adviva.net
 adx-exchange.toast.com
 adxpansion.com
@@ -134,6 +132,8 @@ ariane.abtasty.com
 as5000.com
 assets.micpn.com
 aswpsdkus.com
+async-px-eu.dynamicyield.com
+async-px.dynamicyield.com
 atdmt.com
 atwola.com
 audit.median.hu
@@ -172,6 +172,7 @@ btloader.com
 bttrack.com
 c.bigmir.net
 c.mgid.com
+capi.connatix.com
 casalemedia.com
 cash4members.com
 cashlayer.com
@@ -201,6 +202,7 @@ collect.igodigital.com
 collector.cint.com
 collector.xhamster.com
 colossusssp.com
+conduit.redfast.com
 confiant-integrations.global.ssl.fastly.net
 connextra.com
 content.tapjoy.com
@@ -220,10 +222,12 @@ creative-serving.com
 creativecdn.com
 creatives.livejasmin.com
 crwdcntrl.net
+cs.media.net
 ct.pinterest.com
 cws.conviva.com
 cxad.cxense.com
 dapper.net
+data.emb-api.com
 dc.banggood.com
 dcinfos-cache.abtasty.com
 dd.nytimes.com
@@ -326,7 +330,6 @@ karma.mdpcdn.com
 krxd.net
 kvinit-prod.api.kochava.com
 l.sharethis.com
-lakequincy.com
 lciapi.ninthdecimal.com
 leadbolt.net
 lfstmedia.com
@@ -382,7 +385,6 @@ mmismm.com
 mng-ads.com
 mocean.mobi
 monetize-api.coronalabs.com
-morgdm.ru
 mpnrs.com
 msads.net
 munchkin.marketo.net
@@ -458,7 +460,6 @@ recs.shareaholic.com
 referrer.disqus.com
 retagro.com
 retargeter.com
-rev2pub.com
 revcontent.com
 revmob.com
 revrtb.com
@@ -552,6 +553,7 @@ t2.hulu.com
 tag.leadplace.fr
 tag.mtrcs.samba.tv
 tagger.opecloud.com
+tags.premiumads.com.br
 tags.tiqcdn.com
 tapjoyads.com
 targeting.washpost.nile.works
@@ -562,8 +564,8 @@ thrtle.com
 tidaltv.com
 top-fwz1.mail.ru
 totemcash.com
-tpc.googlesyndication.com
 tr.snapchat.com
+tr6.snapchat.com
 trace.qq.com
 track.dictionary.com
 track.pricespider.com
@@ -604,7 +606,6 @@ utarget.co.uk
 valueclick.com
 valueclickmedia.com
 vdopia.com
-vendimob.pl
 vi-serve.com
 videoevents.outbrain.com
 vindicosuite.com
