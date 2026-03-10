@@ -45,6 +45,7 @@ const options = {
         removeElems: '', // remove page elements
         addCSS: '', // add extra CSS
         console: null, // print browser's console msgs
+        innerText: null, // extract page's innerText
         printScreen: null, // save page screenshot
         printScreenQuality: 75, // screenshot quality (1-100)
     },
@@ -100,6 +101,15 @@ const options = {
 
     console.log(`Waiting ${args.wait / 1000} sec...`);
     await delay(args.wait);
+
+    // Save the text of the page just before closing the browser,
+    // if the user requested it
+    if (args.innerText) {
+        const textPath = args.OUT.replace(/\.json(\.gz)?$/, '.txt');
+        const text = await page.locator('body').innerText();
+        await fs.promises.writeFile(textPath, text, { encoding: 'utf8' });
+        console.log(`Page text was saved as "${textPath}"`);
+    }
 
     // Take a full page screenshot just before closing the browser,
     // if the user requested it
