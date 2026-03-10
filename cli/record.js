@@ -8,7 +8,7 @@ import mri from 'mri';
 
 import pkg from '../package.json' with { type: 'json' };
 import { recordPage } from '../src/record.js';
-import { delay } from '../src/util.js';
+import { delay } from '../src/util.ts';
 
 const options = {
     boolean: ['help', 'version'],
@@ -45,6 +45,8 @@ const options = {
         removeElems: '', // remove page elements
         addCSS: '', // add extra CSS
         console: null, // print browser's console msgs
+        printScreen: null, // save page screenshot
+        printScreenQuality: 75, // screenshot quality (1-100)
     },
 };
 
@@ -56,7 +58,8 @@ const options = {
         return;
     }
 
-    const { snapshot, page, context, browser } = await recordPage(args);
+    // { snapshot, page, context, browser }
+    const { snapshot, page, browser } = await recordPage(args);
 
     page.on('close', async () => {
         if (args.minify) {
@@ -97,5 +100,14 @@ const options = {
 
     console.log(`Waiting ${args.wait / 1000} sec...`);
     await delay(args.wait);
+
+    // Take a full page screenshot just before closing the browser,
+    // if the user requested it
+    if (args.printScreen) {
+        const imgPath = args.OUT.replace(/\.json(\.gz)?$/, '.jpg');
+        await page.screenshot({ path: imgPath, type: 'jpeg', quality: args.printScreenQuality, fullPage: true });
+        console.log(`Page screenshot was saved as "${imgPath}"`);
+    }
+
     await browser.close();
 })();

@@ -8,7 +8,7 @@ import { transform as minifyCSS } from 'lightningcss';
 import { PurgeCSS } from 'purgecss';
 import { PlaywrightBlocker } from '@ghostery/adblocker-playwright';
 
-import { requestKey, normalizeURL, toBool, smartSplit, encodeBody } from './util.js';
+import { encodeBody, normalizeURL, requestKey, smartSplit, toBool } from './util.ts';
 
 async function processArgs(args) {
     args.gzip = toBool(args.gzip);
@@ -33,7 +33,9 @@ async function processArgs(args) {
 
     args.DROPST = smartSplit(args.dropStatus).map((x) => new RegExp(x.replace(/x/gi, '\\d')));
     if (args.blockList) {
-        const blockList = await fs.promises.readFile(args.blockList, { encoding: 'utf8' });
+        const blockList = await fs.promises.readFile(args.blockList, {
+            encoding: 'utf8',
+        });
         args.DROPLI = blockList
             .split('\n')
             .map((x) => x.trim().replace(/\/+$/, ''))
@@ -312,7 +314,7 @@ async function internalRecordPage(args, page) {
         }
 
         await page.evaluate((css) => {
-            // cycle to remove CSS DOM nodes
+            // cycle to remove all CSS DOM nodes
             // this needs to run after collecting the CSS
             // and has to run a few times to remove all deep nodes ...
             while (document.styleSheets.length > 0) {

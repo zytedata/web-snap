@@ -104,5 +104,6 @@ dist
 .tern-port
 
 # Snapshot files
+snap*.jpg
 snap*.json
 snap*.json.gz

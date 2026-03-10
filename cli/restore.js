@@ -3,7 +3,7 @@ import mri from 'mri';
 
 import pkg from '../package.json' with { type: 'json' };
 import { restorePage } from '../src/restore.js';
-import { delay } from '../src/util.js';
+import { delay } from '../src/util.ts';
 
 const options = {
     boolean: ['help', 'version'],

@@ -5,36 +5,34 @@ import fs from 'fs';
 import { gunzip } from 'zlib';
 import { promisify } from 'util';
 
-import { encode, decode } from './quopri.js';
+import { decode, encode } from './quopri.ts';
 
-export function delay(time) {
+export function delay(time: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, time));
 }
 
-export function requestKey(r) {
+export function requestKey(r: any): string {
     return `${r.method()}:${r.url()}`;
 }
 
-export function normalizeURL(url) {
+export function normalizeURL(url: string): string {
     if (!url) return '';
     const u = new URL(url.replace(/\/+$/, ''));
     u.hash = '';
     return u.toString();
 }
 
-export function checkBrowser(str) {
-    return ['chromium', 'firefox', 'webkit'].includes(str);
-}
-
-export function toBool(str) {
+export function toBool(str: any): boolean {
     if (!str) return !!str;
     if (typeof str !== 'string') return str;
     str = str.toLowerCase();
-    if (str === 'false' || str === 'off' || str === 'no' || str === '0') return false;
+    if (str === 'false' || str === 'off' || str === 'no' || str === '0') {
+        return false;
+    }
     return true;
 }
 
-export function smartSplit(str) {
+export function smartSplit(str: string | string[]): string[] {
     if (!str) return [];
     if (typeof str !== 'string') return str;
     const split = [];
@@ -46,15 +44,16 @@ export function smartSplit(str) {
     return split;
 }
 
-export async function parseSnapshot(fname) {
-    let record = await fs.promises.readFile(fname);
+export async function parseSnapshot(fname: string): Promise<Record<string, any>> {
+    let record: Buffer = await fs.promises.readFile(fname);
     if (fname.endsWith('.gz')) {
         record = await promisify(gunzip)(record);
     }
+    // @ts-ignore It's OK
     return JSON.parse(record);
 }
 
-export function encodeBody(resourceType, contentType, buffer) {
+export function encodeBody(resourceType: string, contentType: string, buffer: Buffer): string {
     if (!buffer || buffer.length === 0) return '';
     if (
         resourceType === 'document' ||
@@ -75,7 +74,7 @@ export function encodeBody(resourceType, contentType, buffer) {
     return `BASE64:${buffer.toString('base64')}`;
 }
 
-export function decodeBody(body) {
+export function decodeBody(body: string): Buffer | string {
     if (!body || body.length === 0) return '';
     if (body.startsWith('QUOPRI:')) return decode(body.slice(7));
     if (body.startsWith('BASE64:')) return Buffer.from(body.slice(7), 'base64');

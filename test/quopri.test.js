@@ -1,5 +1,5 @@
 import test from 'ava';
-import { encode, decode } from '../src/quopri.js';
+import { encode, decode } from '../src/quopri.ts';
 
 test('quopri test', async (t) => {
     t.is(decode(' =3D=20'), ' = ');

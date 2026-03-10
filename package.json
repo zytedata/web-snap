@@ -6,15 +6,15 @@
     "@ghostery/adblocker-playwright": "2.14.1",
     "cross-fetch": "4.1.0",
     "html-minifier-terser": "7.2.0",
-    "lightningcss": "1.31.1",
+    "lightningcss": "1.32.0",
     "mri": "1.2.0",
     "playwright": "1.58.2",
     "pretty-bytes": "7.1.0",
     "purgecss": "8.0.0"
   },
   "devDependencies": {
-    "ava": "6.4.1",
-    "express": "5.2.1"
+    "ava": "6.x",
+    "express": "5.x"
   },
   "main": "src",
   "type": "module",

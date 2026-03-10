@@ -2,7 +2,7 @@
 import mri from 'mri';
 import prettyBytes from 'pretty-bytes';
 
-import { parseSnapshot } from '../src/util.js';
+import { parseSnapshot } from '../src/util.ts';
 
 const options = {
     alias: {
@@ -31,7 +31,7 @@ function bar(value, maxValue) {
     let maxValue = Math.max(...Object.values(snap.responses).map((v) => (v.body ? v.body.length : 0)));
     const data = Object.entries(snap.responses)
         .map(([k, v]) => {
-            const t = (v.headers && v.headers['content-type']) ? v.headers['content-type'].split('/')[0] : 'other';
+            const t = v.headers && v.headers['content-type'] ? v.headers['content-type'].split('/')[0] : 'other';
             if (resourceTypes[t]) resourceTypes[t] += 1;
             else resourceTypes[t] = 1;
             return [k, v.body ? v.body.length : 0];

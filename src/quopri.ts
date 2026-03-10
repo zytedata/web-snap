@@ -1,7 +1,7 @@
 /**
  * Quoted-printable decode string.
  */
-export function decode(input) {
+export function decode(input: string): string {
     // Reference: https://mths.be/quoted-printable by @mathias | MIT license
     return (
         input
@@ -28,7 +28,7 @@ export function decode(input) {
 /**
  * Quoted-printable encode string or Buffer.
  */
-export function encode(buffer) {
+export function encode(buffer: Buffer | string): string {
     // Reference: https://npmjs.com/package/libqp by Andris Reinman | MIT license
     if (typeof buffer === 'string') {
         buffer = Buffer.from(buffer, 'utf-8');
@@ -67,7 +67,7 @@ export function encode(buffer) {
 /**
  * Helper function to check if a number is inside provided ranges
  */
-function checkRanges(nr, ranges) {
+function checkRanges(nr: number, ranges: number[][]): boolean {
     for (let i = ranges.length - 1; i >= 0; i--) {
         if (!ranges[i].length) {
             continue;

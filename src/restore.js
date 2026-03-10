@@ -3,7 +3,7 @@
  */
 import { chromium } from 'playwright';
 
-import { requestKey, normalizeURL, toBool, smartSplit, parseSnapshot, decodeBody } from './util.js';
+import { decodeBody, normalizeURL, parseSnapshot, requestKey, smartSplit, toBool } from './util.ts';
 
 async function processArgs(args) {
     args.js = toBool(args.js);
@@ -35,6 +35,7 @@ export async function restorePage(args) {
     const URL = normalizeURL(record.base_url || record.url);
     console.log('Restoring URL:', URL);
 
+    // only Chromium supported for now
     const browser = await chromium.launch({
         headless: args.headless,
         args: [
