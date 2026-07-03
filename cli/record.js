@@ -2,7 +2,7 @@
 import fs from 'fs';
 import { gzip } from 'zlib';
 import { promisify } from 'util';
-import { minify } from 'html-minifier-terser';
+import { minify } from 'html-minifier-next';
 import prettyBytes from 'pretty-bytes';
 import mri from 'mri';
 
@@ -72,6 +72,7 @@ const options = {
                     collapseWhitespace: true,
                     conservativeCollapse: true,
                     continueOnParseError: true,
+                    processConditionalComments: true,
                     quoteCharacter: "'",
                     removeAttributeQuotes: true,
                     removeStyleLinkTypeAttributes: true,

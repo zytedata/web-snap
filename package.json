@@ -5,10 +5,10 @@
   "dependencies": {
     "@ghostery/adblocker-playwright": "2.14.1",
     "cross-fetch": "4.1.0",
-    "html-minifier-terser": "7.2.0",
-    "lightningcss": "1.32.0",
+    "html-minifier-next": "5.x",
+    "lightningcss": "1.x",
     "mri": "1.2.0",
-    "playwright": "1.58.2",
+    "playwright": "1.61.1",
     "pretty-bytes": "7.1.0",
     "purgecss": "8.0.0"
   },

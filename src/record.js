@@ -198,7 +198,11 @@ async function internalRecordPage(args, page) {
     }
 
     // initial snapshot
-    snapshot.html = (await page.content()).trim();
+    try {
+        snapshot.html = (await page.content()).trim();
+    } catch (err) {
+        throw `Cannot capture page HTML: ${err}`;
+    }
 
     const imgCount = await page.locator('img').count();
     if (imgCount > 0) {
@@ -255,7 +259,12 @@ async function internalRecordPage(args, page) {
     }
 
     // second snapshot
-    snapshot.html = (await page.content()).trim();
+    try {
+        snapshot.html = (await page.content()).trim();
+    } catch (err) {
+        console.log(`Cannot capture page HTML: ${err}`);
+        return snapshot;
+    }
 
     if (args.minCSS || args.purgeCSS) {
         const [rawCSS, URLs] = await page.evaluate(() => {
